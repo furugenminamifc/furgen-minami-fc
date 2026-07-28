@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0ea5e9">
+<title>古堅南FC 成績管理</title>
+<style>
+:root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#667085;--line:#dbe2ea;--blue:#0ea5e9;--blue2:#0369a1;--green:#16a34a;--red:#dc2626;--gold:#f59e0b}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif;background:var(--bg);color:var(--ink)}
+header{position:sticky;top:0;z-index:20;background:linear-gradient(135deg,#38bdf8,#0284c7);color:white;padding:14px 16px;box-shadow:0 2px 12px #0002}
+header h1{font-size:20px;margin:0}header small{opacity:.9}
+nav{display:flex;gap:8px;overflow-x:auto;padding:10px 12px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:70px;z-index:15}
+nav button{white-space:nowrap;border:0;border-radius:999px;padding:10px 14px;background:#eaf6fc;color:#075985;font-weight:700}
+nav button.active{background:var(--blue);color:#fff}
+main{max-width:1100px;margin:auto;padding:14px}
+section{display:none}.show{display:block}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 3px 10px #0f172a0a}
+.stat b{display:block;font-size:28px;color:var(--blue2)}.stat span{color:var(--muted);font-size:13px}
+h2{font-size:19px;margin:6px 0 12px}h3{font-size:16px;margin:10px 0}
+label{display:block;font-size:13px;color:var(--muted);margin-top:8px}
+input,select,textarea{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;background:white;font-size:16px}
+textarea{min-height:80px}
+.formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+button,.btn{cursor:pointer;border:0;border-radius:10px;padding:11px 14px;font-weight:700;background:var(--blue);color:#fff}
+.secondary{background:#475569}.danger{background:var(--red)}.success{background:var(--green)}.light{background:#e2e8f0;color:#334155}
+.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:12px;background:white}
+table{border-collapse:collapse;width:100%;min-width:720px}th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;font-size:14px}
+th{background:#f8fafc;position:sticky;top:0}tr:last-child td{border-bottom:0}
+.rank{font-weight:800;color:var(--gold)}.pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#e0f2fe;color:#075985;font-size:12px}
+.notice{padding:12px;border-radius:12px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;margin-bottom:10px}
+.good{background:#ecfdf5;border-color:#bbf7d0;color:#166534}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>*{flex:1}
+.player-checks{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;max-height:320px;overflow:auto;padding:8px;border:1px solid var(--line);border-radius:12px}
+.player-check{background:#f8fafc;border-radius:10px;padding:8px}.player-check label{margin:0;color:var(--ink)}
+footer{padding:25px;text-align:center;color:var(--muted);font-size:12px}
+@media(max-width:600px){header{padding-top:max(14px,env(safe-area-inset-top))}nav{top:75px}main{padding:10px}.card{border-radius:13px}}
+</style>
+</head>
+<body>
+<header><h1>⚽ 古堅南FC 成績管理</h1><small>選手・通算成績・試合記録・ランキング</small></header>
+<nav id="nav">
+<button data-tab="home" class="active">ホーム</button>
+<button data-tab="players">選手</button>
+<button data-tab="match">試合追加</button>
+<button data-tab="matches">試合一覧</button>
+<button data-tab="ranking">ランキング</button>
+<button data-tab="backup">バックアップ</button>
+</nav>
+<main>
+<section id="home" class="show">
+<div id="sourceNotice" class="notice good">初期データとして、アップロードされたバックアップを組み込んでいます。</div>
+<div class="grid" id="stats"></div>
+<div class="card" style="margin-top:12px"><h2>最近の試合</h2><div id="recentMatches"></div></div>
+</section>
+
+<section id="players">
+<div class="card">
+<h2>選手登録・編集</h2>
+<input type="hidden" id="pId">
+<div class="formgrid">
+<div><label>選手名</label><input id="pName" placeholder="例：ゆうしん"></div>
+<div><label>背番号</label><input id="pNumber" inputmode="numeric"></div>
+<div><label>ポジション</label><select id="pPosition"><option value="">未設定</option><option>GP</option><option>FW</option><option>MF</option><option>DF</option><option>GP・DF</option><option>GP・MF</option><option>GP・FW</option><option>FW・MF</option><option>FW・DF</option><option>MF・DF</option><option>MF・FW</option></select></div>
+<div><label>学年</label><select id="pGrade"><option>1年</option><option>2年</option><option>3年</option><option>4年</option><option>5年</option><option>6年</option><option>卒団</option></select></div>
+<div><label>状態</label><select id="pStatus"><option>現役</option><option>卒団</option><option>退団</option></select></div>
+<div><label>過去出場数</label><input id="pApps" type="number" min="0" value="0"></div>
+<div><label>過去得点</label><input id="pGoals" type="number" min="0" value="0"></div>
+<div><label>過去アシスト</label><input id="pAssists" type="number" min="0" value="0"></div>
+<div><label>過去イエロー</label><input id="pYellow" type="number" min="0" value="0"></div>
+<div><label>過去レッド</label><input id="pRed" type="number" min="0" value="0"></div>
+</div>
+<div class="actions"><button onclick="savePlayer()">保存</button><button class="light" onclick="clearPlayerForm()">入力クリア</button></div>
+</div>
+<div class="card" style="margin-top:12px">
+<div class="row"><h2 style="margin-right:auto">選手一覧</h2><input id="playerSearch" placeholder="名前・学年・ポジションで検索" oninput="renderPlayers()"></div>
+<div class="tablewrap"><table><thead><tr><th>名前</th><th>学年</th><th>位置</th><th>出場</th><th>得点</th><th>アシスト</th><th>操作</th></tr></thead><tbody id="playersBody"></tbody></table></div>
+</div>
+</section>
+
+<section id="match">
+<div class="card">
+<h2>新しい試合を追加</h2>
+<div class="formgrid">
+<div><label>日付</label><input id="mDate" type="date"></div>
+<div><label>大会名</label><input id="mCompetition" placeholder="例：リーグ戦"></div>
+<div><label>対戦相手</label><input id="mOpponent"></div>
+<div><label>古堅南FC 得点</label><input id="mFor" type="number" min="0" value="0"></div>
+<div><label>相手 得点</label><input id="mAgainst" type="number" min="0" value="0"></div>
+<div><label>年度</label><input id="mYear" type="number"></div>
+</div>
+<label>メモ</label><textarea id="mMemo"></textarea>
+<h3>選手別記録</h3>
+<div class="notice">出場した選手にチェックを入れ、得点・アシスト・カード数を入力してください。</div>
+<div id="recordInputs" class="player-checks"></div>
+<div class="actions"><button class="success" onclick="saveMatch()">試合を保存</button></div>
+</div>
+</section>
+
+<section id="matches">
+<div class="card"><h2>試合一覧</h2><div id="matchesList"></div></div>
+</section>
+
+<section id="ranking">
+<div class="card">
+<h2>ランキング</h2>
+<div class="formgrid">
+<div><label>ランキング種別</label><select id="rankType" onchange="renderRanking()"><option value="apps">出場数</option><option value="goals">得点</option><option value="assists">アシスト</option><option value="yellow">イエローカード</option><option value="red">レッドカード</option></select></div>
+<div><label>学年</label><select id="rankGrade" onchange="renderRanking()"><option value="">全学年</option><option>1年</option><option>2年</option><option>3年</option><option>4年</option><option>5年</option><option>6年</option><option>卒団</option></select></div>
+</div>
+<div class="tablewrap" style="margin-top:12px"><table><thead><tr><th>順位</th><th>選手</th><th>学年</th><th>ポジション</th><th>記録</th></tr></thead><tbody id="rankBody"></tbody></table></div>
+</div>
+</section>
+
+<section id="backup">
+<div class="card">
+<h2>バックアップ・復元</h2>
+<p>この端末のデータをJSONファイルとして保存できます。機種変更や誤操作に備え、定期的に保存してください。</p>
+<div class="actions"><button onclick="downloadBackup()">バックアップを保存</button><label class="btn secondary">バックアップを復元<input id="restoreFile" type="file" accept=".json,application/json" hidden onchange="restoreBackup(event)"></label><button class="danger" onclick="resetData()">初期データに戻す</button></div>
+</div>
+</section>
+</main>
+<footer>データはこの端末のブラウザ内に保存されます。</footer>
+
+<script>
+const INITIAL_DATA = {"players": [{"id": "Pms48m9qgit0e", "name": "キース", "number": "", "position": "FW", "grade": "6年", "status": "現役", "pastApps": 18, "pastStarts": 0, "pastMin": 0, "pastGoals": 2, "pastAssists": 0, "pastYellow": 0, "pastRed": 0}, {"id": "Pms48mzoxfekp", "name": "みち", "number": "", "position": "GP", "grade": "3年", "status": "現役", "pastApps": 5, "pastStarts": 0, "pastMin": 0, "pastGoals": 0, "pastAssists": 0, "pastYellow": 0, "pastRed": 0}, {"id": "Pms48odeq9uql", "name": "ゆうしん", "number": "", "position": "FW・MF", "grade": "6年", "status": "現役", "pastApps": 248, "pastStarts": 0, "pastMin": 0, "pastGoals": 61, "pastAssists": 11, "pastYellow": 0, "pastRed": 0}, {"id": "Pms48pbni8v0m", "name": "たまき", "number": "", "position": "MF・DF", "grade": "5年", "status": "現役", "pastApps": 189, "pastStarts": 0, "pastMin": 0, "pastGoals": 3, "pastAssists": 1, "pastYellow": 0, "pastRed": 0}, {"id": "Pms48sk5ebzbk", "name": "さきと", "number": "", "position": "FW・MF", "grade": "5年", "status": "現役", "pastApps": 328, "pastStarts": 0, "pastMin": 0, "pastGoals": 80, "pastAssists": 33, "pastYellow": 0, "pastRed": 0}, {"id": "Pms48tqc2bpbt", "name": "ひろか", "number": "", "position": "MF・GP", "grade": "5年", "status": "現役", "pastApps": 316, "pastStarts": 0, "pastMin": 0, "pastGoals": 43, "pastAssists": 35, "pastYellow": 0, "pastRed": 0}, {"id": "Pms48urcgdhhp", "name": "あるき", "number": "", "position": "DF・MF", "grade": "6年", "status": "現役", "pastApps": 214, "pastStarts": 0, "pastMin": 0, "pastGoals": 15, "pastAssists": 3, "pastYellow": 0, "pastRed": 0}, {"id": "Pms48v03daagm", "name": "りつ", "number": "", "position": "", "grade": "1年", "status": "現役", "pastApps": 0, "pastStarts": 0, "pastMin": 0, "pastGoals": 0, "pastAssists": 0, "pastYellow": 0, "pastRed": 0}, {"id": "Pms48w1sivepr", "name": "そよか", "number": "", "position": "MF・DF", "grade": "6年", "status": "現役", "pastApps": 266, "pastStarts": 0, "pastMin": 0, "pastGoals": 3, "pastAssists": 3, "pastYellow": 0, "pastRed": 0}, {"id": "Pms48x2dc2z6w", "name": "こ　かいり", "number": "", "position": "MF・DF", "grade": "3年", "status": "現役", "pastApps": 48, "pastStarts": 0, "pastMin": 0, "pastGoals": 0, "pastAssists": 0, "pastYellow": 0, "pastRed": 0}, {"id": "Pms48xkf49hdn", "name": "た　かいと", "number": "", "position": "MF", "grade": "4年", "status": "現役", "pastApps": 6, "pastStarts": 0, "pastMin": 0, "pastGoals": 0, "pastAssists": 1, "pastYellow": 0, "pastRed": 0}, {"id": "Pms48yd88jj1f", "name": "そうすけ", "number": "", "position": "MF・DF", "grade": "6年", "status": "現役", "pastApps": 66, "pastStarts": 0, "pastMin": 0, "pastGoals": 5, "pastAssists": 2, "pastYellow": 0, "pastRed": 0}, {"id": "Pms48zdioht9p", "name": "ろい", "number": "", "position": "", "grade": "2年", "status": "現役", "pastApps": 0, "pastStarts": 0, "pastMin": 0, "pastGoals": 0, "pastAssists": 0, "pastYellow": 0, "pastRed": 0}, {"id": "Pms490pi199l1", "name": "える", "number": "", "position": "", "grade": "5年", "status": "現役", "pastApps": 169, "pastStarts": 0, "pastMin": 0, "pastGoals": 26, "pastAssists": 3, "pastYellow": 0, "pastRed": 0}, {"id": "Pms4916885zwf", "name": "ときほ", "number": "", "position": "", "grade": "4年", "status": "現役", "pastApps": 45, "pastStarts": 0, "pastMin": 0, "pastGoals": 0, "pastAssists": 0, "pastYellow": 0, "pastRed": 0}, {"id": "Pms4924le132t", "name": "ありさ", "number": "", "position": "FW・MF", "grade": "6年", "status": "現役", "pastApps": 162, "pastStarts": 0, "pastMin": 0, "pastGoals": 0, "pastAssists": 3, "pastYellow": 0, "pastRed": 0}, {"id": "Pms492jpuip98", "name": "とわ", "number": "", "position": "", "grade": "3年", "status": "現役", "pastApps": 6, "pastStarts": 0, "pastMin": 0, "pastGoals": 0, "pastAssists": 0, "pastYellow": 0, "pastRed": 0}, {"id": "Pms4931y3nhmi", "name": "あ　かんた", "number": "", "position": "", "grade": "5年", "status": "現役", "pastApps": 61, "pastStarts": 0, "pastMin": 0, "pastGoals": 9, "pastAssists": 1, "pastYellow": 0, "pastRed": 0}, {"id": "Pms494d7xq9iq", "name": "そうた", "number": "", "position": "MF・FW", "grade": "6年", "status": "現役", "pastApps": 284, "pastStarts": 0, "pastMin": 0, "pastGoals": 92, "pastAssists": 28, "pastYellow": 0, "pastRed": 0}, {"id": "Pms495dc80v9y", "name": "しゅんすけ", "number": "", "position": "DF・MF", "grade": "6年", "status": "現役", "pastApps": 281, "pastStarts": 0, "pastMin": 0, "pastGoals": 5, "pastAssists": 5, "pastYellow": 0, "pastRed": 0}, {"id": "Pms4968ttd1bq", "name": "はんと", "number": "", "position": "GP・DF", "grade": "6年", "status": "現役", "pastApps": 246, "pastStarts": 0, "pastMin": 0, "pastGoals": 2, "pastAssists": 1, "pastYellow": 0, "pastRed": 0}, {"id": "Pms496p14i5gm", "name": "えいきち", "number": "", "position": "DF", "grade": "4年", "status": "現役", "pastApps": 46, "pastStarts": 0, "pastMin": 0, "pastGoals": 0, "pastAssists": 0, "pastYellow": 0, "pastRed": 0}, {"id": "Pms4975p70p6z", "name": "はやせ", "number": "", "position": "DF・MF", "grade": "4年", "status": "現役", "pastApps": 62, "pastStarts": 0, "pastMin": 0, "pastGoals": 0, "pastAssists": 0, "pastYellow": 0, "pastRed": 0}, {"id": "Pms497jvsuujt", "name": "にこ", "number": "", "position": "FW", "grade": "6年", "status": "現役", "pastApps": 43, "pastStarts": 0, "pastMin": 0, "pastGoals": 0, "pastAssists": 0, "pastYellow": 0, "pastRed": 0}, {"id": "Pms497tsxipyu", "name": "こうすけ", "number": "", "position": "", "grade": "2年", "status": "現役", "pastApps": 0, "pastStarts": 0, "pastMin": 0, "pastGoals": 0, "pastAssists": 0, "pastYellow": 0, "pastRed": 0}, {"id": "Pms4984ixm5ge", "name": "せいすけ", "number": "", "position": "", "grade": "2年", "status": "現役", "pastApps": 0, "pastStarts": 0, "pastMin": 0, "pastGoals": 0, "pastAssists": 0, "pastYellow": 0, "pastRed": 0}, {"id": "Pms498co4ppve", "name": "な　かいと", "number": "", "position": "", "grade": "1年", "status": "現役", "pastApps": 0, "pastStarts": 0, "pastMin": 0, "pastGoals": 0, "pastAssists": 0, "pastYellow": 0, "pastRed": 0}, {"id": "Pms498mepkaqc", "name": "そうし", "number": "", "position": "", "grade": "3年", "status": "現役", "pastApps": 3, "pastStarts": 0, "pastMin": 0, "pastGoals": 0, "pastAssists": 0, "pastYellow": 0, "pastRed": 0}, {"id": "Pms499ftecupu", "name": "ゆいと", "number": "", "position": "MF・FW", "grade": "6年", "status": "現役", "pastApps": 184, "pastStarts": 0, "pastMin": 0, "pastGoals": 19, "pastAssists": 3, "pastYellow": 0, "pastRed": 0}, {"id": "Pms499vvk6ejc", "name": "ひ　かんた", "number": "", "position": "", "grade": "4年", "status": "現役", "pastApps": 25, "pastStarts": 0, "pastMin": 0, "pastGoals": 1, "pastAssists": 0, "pastYellow": 0, "pastRed": 0}, {"id": "Pms49ad9g1jdx", "name": "けんしちろう", "number": "", "position": "", "grade": "2年", "status": "現役", "pastApps": 0, "pastStarts": 0, "pastMin": 0, "pastGoals": 0, "pastAssists": 0, "pastYellow": 0, "pastRed": 0}, {"id": "Pms49az2he57k", "name": "けんすけ", "number": "", "position": "", "grade": "4年", "status": "現役", "pastApps": 6, "pastStarts": 0, "pastMin": 0, "pastGoals": 0, "pastAssists": 0, "pastYellow": 0, "pastRed": 0}, {"id": "Pms49blzb8elg", "name": "らいと", "number": "", "position": "", "grade": "5年", "status": "現役", "pastApps": 116, "pastStarts": 0, "pastMin": 0, "pastGoals": 29, "pastAssists": 6, "pastYellow": 0, "pastRed": 0}, {"id": "Pms49c9ammqqn", "name": "ともあ", "number": "", "position": "", "grade": "6年", "status": "現役", "pastApps": 122, "pastStarts": 0, "pastMin": 0, "pastGoals": 2, "pastAssists": 5, "pastYellow": 0, "pastRed": 0}, {"id": "Pms49chr3q79x", "name": "いつき", "number": "", "position": "", "grade": "2年", "status": "現役", "pastApps": 0, "pastStarts": 0, "pastMin": 0, "pastGoals": 0, "pastAssists": 0, "pastYellow": 0, "pastRed": 0}], "matches": [], "records": []};
+let data = loadData();
+
+function loadData(){
+  try{
+    const s=localStorage.getItem("furugen_minami_fc_data_v2");
+    return s?JSON.parse(s):structuredClone(INITIAL_DATA);
+  }catch(e){return structuredClone(INITIAL_DATA)}
+}
+function persist(){localStorage.setItem("furugen_minami_fc_data_v2",JSON.stringify(data));renderAll()}
+const n=v=>Number(v||0);
+const uid=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const today=new Date().toISOString().slice(0,10);
+document.getElementById("mDate").value=today;
+document.getElementById("mYear").value=new Date().getFullYear();
+
+document.querySelectorAll("#nav button").forEach(b=>b.onclick=()=>{
+ document.querySelectorAll("section").forEach(s=>s.classList.remove("show"));
+ document.querySelectorAll("#nav button").forEach(x=>x.classList.remove("active"));
+ document.getElementById(b.dataset.tab).classList.add("show"); b.classList.add("active");
+ if(b.dataset.tab==="match") renderRecordInputs();
+});
+
+function totalsForPlayer(p){
+ const recs=(data.records||[]).filter(r=>r.playerId===p.id);
+ return {
+  apps:n(p.pastApps)+recs.filter(r=>r.played).length,
+  goals:n(p.pastGoals)+recs.reduce((a,r)=>a+n(r.goals),0),
+  assists:n(p.pastAssists)+recs.reduce((a,r)=>a+n(r.assists),0),
+  yellow:n(p.pastYellow)+recs.reduce((a,r)=>a+n(r.yellow),0),
+  red:n(p.pastRed)+recs.reduce((a,r)=>a+n(r.red),0)
+ }
+}
+function teamStats(){
+ const ms=data.matches||[]; let w=0,d=0,l=0,gf=0,ga=0;
+ ms.forEach(m=>{gf+=n(m.for);ga+=n(m.against);if(n(m.for)>n(m.against))w++;else if(n(m.for)<n(m.against))l++;else d++});
+ return {games:ms.length,w,d,l,gf,ga,gd:gf-ga,rate:ms.length?Math.round(w/ms.length*100):0}
+}
+function renderStats(){
+ const t=teamStats(); const items=[
+ ["選手数",(data.players||[]).length],["登録試合",t.games],["勝利",t.w],["引分",t.d],["敗戦",t.l],["勝率",t.rate+"%"],["得点",t.gf],["失点",t.ga]
+ ];
+ document.getElementById("stats").innerHTML=items.map(x=>`<div class="card stat"><span>${x[0]}</span><b>${x[1]}</b></div>`).join("");
+}
+function renderRecent(){
+ const ms=[...(data.matches||[])].sort((a,b)=>(b.date||"").localeCompare(a.date||"")).slice(0,5);
+ document.getElementById("recentMatches").innerHTML=ms.length?ms.map(m=>`<p><b>${m.date||""}</b>　古堅南FC ${m.for}-${m.against} ${esc(m.opponent||"")} <span class="pill">${esc(m.competition||"")}</span></p>`).join(""):"まだ試合が登録されていません。";
+}
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function renderPlayers(){
+ const q=document.getElementById("playerSearch")?.value.trim()||"";
+ const rows=(data.players||[]).filter(p=>!q||[p.name,p.grade,p.position].join(" ").includes(q));
+ document.getElementById("playersBody").innerHTML=rows.map(p=>{const t=totalsForPlayer(p);return `<tr><td><b>${esc(p.name)}</b></td><td>${esc(p.grade)}</td><td>${esc(p.position||"未設定")}</td><td>${t.apps}</td><td>${t.goals}</td><td>${t.assists}</td><td><button onclick="editPlayer('${p.id}')">編集</button> <button class="danger" onclick="deletePlayer('${p.id}')">削除</button></td></tr>`}).join("");
+}
+function savePlayer(){
+ const id=document.getElementById("pId").value||uid("P");
+ const name=document.getElementById("pName").value.trim(); if(!name)return alert("選手名を入力してください");
+ const p={id,name,number:pNumber.value,position:pPosition.value,grade:pGrade.value,status:pStatus.value,pastApps:n(pApps.value),pastStarts:0,pastMin:0,pastGoals:n(pGoals.value),pastAssists:n(pAssists.value),pastYellow:n(pYellow.value),pastRed:n(pRed.value)};
+ const i=data.players.findIndex(x=>x.id===id); if(i>=0)data.players[i]=p;else data.players.push(p);
+ clearPlayerForm();persist();
+}
+function editPlayer(id){
+ const p=data.players.find(x=>x.id===id); if(!p)return;
+ pId.value=p.id;pName.value=p.name;pNumber.value=p.number||"";pPosition.value=p.position||"";pGrade.value=p.grade||"1年";pStatus.value=p.status||"現役";pApps.value=n(p.pastApps);pGoals.value=n(p.pastGoals);pAssists.value=n(p.pastAssists);pYellow.value=n(p.pastYellow);pRed.value=n(p.pastRed);scrollTo({top:0,behavior:"smooth"});
+}
+function clearPlayerForm(){pId.value="";pName.value="";pNumber.value="";pPosition.value="";pGrade.value="1年";pStatus.value="現役";pApps.value=0;pGoals.value=0;pAssists.value=0;pYellow.value=0;pRed.value=0}
+function deletePlayer(id){
+ if(!confirm("この選手を削除しますか？"))return;
+ data.players=data.players.filter(p=>p.id!==id);data.records=data.records.filter(r=>r.playerId!==id);persist();
+}
+function renderRecordInputs(){
+ const act=(data.players||[]).filter(p=>p.status==="現役");
+ recordInputs.innerHTML=act.map(p=>`<div class="player-check">
+<label><input type="checkbox" class="rec-play" data-id="${p.id}" style="width:auto"> <b>${esc(p.name)}</b>（${esc(p.grade)}）</label>
+<div class="formgrid">
+<div><label>得点</label><input class="rec-goal" data-id="${p.id}" type="number" min="0" value="0"></div>
+<div><label>アシスト</label><input class="rec-assist" data-id="${p.id}" type="number" min="0" value="0"></div>
+<div><label>黄</label><input class="rec-yellow" data-id="${p.id}" type="number" min="0" value="0"></div>
+<div><label>赤</label><input class="rec-red" data-id="${p.id}" type="number" min="0" value="0"></div>
+</div></div>`).join("");
+}
+function saveMatch(){
+ const date=mDate.value,opponent=mOpponent.value.trim(); if(!date||!opponent)return alert("日付と対戦相手を入力してください");
+ const match={id:uid("M"),date,competition:mCompetition.value.trim(),opponent,for:n(mFor.value),against:n(mAgainst.value),year:n(mYear.value),memo:mMemo.value.trim()};
+ data.matches.push(match);
+ document.querySelectorAll(".rec-play").forEach(ch=>{
+  const id=ch.dataset.id, goals=n(document.querySelector(`.rec-goal[data-id="${id}"]`).value),assists=n(document.querySelector(`.rec-assist[data-id="${id}"]`).value),yellow=n(document.querySelector(`.rec-yellow[data-id="${id}"]`).value),red=n(document.querySelector(`.rec-red[data-id="${id}"]`).value);
+  if(ch.checked||goals||assists||yellow||red)data.records.push({id:uid("R"),matchId:match.id,playerId:id,played:ch.checked,goals,assists,yellow,red});
+ });
+ persist();alert("試合を保存しました");mOpponent.value="";mCompetition.value="";mFor.value=0;mAgainst.value=0;mMemo.value="";renderRecordInputs();
+}
+function renderMatches(){
+ const ms=[...(data.matches||[])].sort((a,b)=>(b.date||"").localeCompare(a.date||""));
+ matchesList.innerHTML=ms.length?ms.map(m=>{
+  const rs=data.records.filter(r=>r.matchId===m.id), scorers=rs.filter(r=>n(r.goals)>0).map(r=>`${esc(data.players.find(p=>p.id===r.playerId)?.name||"不明")} ${r.goals}`).join("、");
+  return `<div class="card" style="margin-bottom:10px"><div class="row"><div><b>${esc(m.date)}　古堅南FC ${m.for}-${m.against} ${esc(m.opponent)}</b><br><span class="pill">${esc(m.competition||"大会未設定")}</span>${scorers?`<p>得点：${scorers}</p>`:""}</div><button class="danger" style="flex:0 0 auto" onclick="deleteMatch('${m.id}')">削除</button></div></div>`
+ }).join(""):"まだ試合が登録されていません。";
+}
+function deleteMatch(id){if(!confirm("この試合と選手別記録を削除しますか？"))return;data.matches=data.matches.filter(m=>m.id!==id);data.records=data.records.filter(r=>r.matchId!==id);persist()}
+function renderRanking(){
+ const type=rankType.value,grade=rankGrade.value,label={apps:"試合",goals:"得点",assists:"アシスト",yellow:"枚",red:"枚"}[type];
+ const list=data.players.filter(p=>!grade||p.grade===grade).map(p=>({p,t:totalsForPlayer(p)})).sort((a,b)=>b.t[type]-a.t[type]);
+ rankBody.innerHTML=list.map((x,i)=>`<tr><td class="rank">${i+1}</td><td><b>${esc(x.p.name)}</b></td><td>${esc(x.p.grade)}</td><td>${esc(x.p.position||"未設定")}</td><td><b>${x.t[type]}</b> ${label}</td></tr>`).join("");
+}
+function downloadBackup(){
+ const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`古堅南FC_バックアップ_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href);
+}
+function restoreBackup(e){
+ const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!Array.isArray(d.players))throw Error();data={players:d.players||[],matches:d.matches||[],records:d.records||[]};persist();alert("復元しました")}catch{alert("正しいバックアップファイルではありません")}};r.readAsText(f);
+}
+function resetData(){if(confirm("現在のデータを消して、最初のバックアップ状態へ戻しますか？")){data=structuredClone(INITIAL_DATA);persist()}}
+function renderAll(){renderStats();renderRecent();renderPlayers();renderMatches();renderRanking()}
+renderAll();
+</script>
+</body></html>
