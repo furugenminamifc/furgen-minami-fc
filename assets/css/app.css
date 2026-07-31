@@ -1468,7 +1468,7 @@ img[loading="lazy"]{content-visibility:auto}
 
 
 /* =========================================================
-   Ver.18.2.2 AI分析・PWA・自動バックアップ
+   Ver.19.0 AI分析・PWA・自動バックアップ
 ========================================================= */
 .v182-ai-overview,.v182-backup-hero{
   display:flex;align-items:center;justify-content:space-between;gap:18px;
@@ -1533,3 +1533,21 @@ img[loading="lazy"]{content-visibility:auto}
   .v182-ai-kpis,.v182-backup-grid{grid-template-columns:1fr}
   .v182-backup-history article{align-items:flex-start;flex-direction:column}
 }
+
+
+/* Ver.19.0 AI統合コマンドセンター */
+.v19-hero{display:flex;justify-content:space-between;align-items:center;gap:18px;padding:24px;border-radius:22px;background:linear-gradient(135deg,#082f49,#0369a1 55%,#0284c7);color:#fff;margin-bottom:16px;box-shadow:0 16px 38px rgba(2,132,199,.22)}
+.v19-hero h2{margin:5px 0 6px;font-size:clamp(23px,3vw,34px)}.v19-hero p{margin:0;opacity:.9}.v19-badge{font-size:12px;font-weight:900;letter-spacing:.08em;background:rgba(255,255,255,.18);padding:6px 10px;border-radius:999px}
+.v19-refresh{background:#fff!important;color:#075985!important;border:0!important;padding:12px 16px!important;border-radius:12px!important;font-weight:900!important}
+.v19-status-grid,.v19-kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px}.v19-status-grid article,.v19-kpi-grid article{background:#fff;border:1px solid #dbeafe;border-radius:16px;padding:15px;box-shadow:0 7px 22px rgba(15,23,42,.06)}
+.v19-status-grid small,.v19-kpi-grid span{display:block;color:#64748b;font-weight:800;font-size:12px}.v19-status-grid strong{display:block;font-size:18px;margin:5px 0}.v19-status-grid article>span{font-size:11px;color:#64748b}
+.v19-kpi-grid{grid-template-columns:repeat(6,minmax(0,1fr))}.v19-kpi-grid b{display:block;font-size:27px;margin-top:5px;color:#0f172a}
+.v19-layout{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.v19-panel{background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:16px;box-shadow:0 8px 26px rgba(15,23,42,.06)}
+.v19-panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.v19-panel-head h3{margin:0}.v19-panel-head button{font-size:12px;padding:8px 10px}
+.v19-actions{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px}.v19-actions button{min-height:44px}.v19-panel textarea{width:100%;min-height:165px;resize:vertical;border:1px solid #cbd5e1;border-radius:12px;padding:12px;line-height:1.65;background:#f8fafc}
+.v19-alert-list,.v19-player-list,.v19-match-list{display:grid;gap:8px}.v19-alert{display:flex;gap:8px;align-items:flex-start;padding:11px;border-radius:12px;font-weight:700}.v19-alert.warn{background:#fff7ed;color:#9a3412}.v19-alert.info{background:#eff6ff;color:#1e40af}.v19-alert.ok{background:#ecfdf5;color:#166534}
+.v19-player-list button{display:flex;justify-content:space-between;align-items:center;text-align:left;background:#f8fafc;color:#0f172a;border:1px solid #e2e8f0}.v19-player-list button span{font-size:11px;color:#64748b}
+.v19-match-list>div{display:flex;justify-content:space-between;align-items:center;padding:11px;border-bottom:1px solid #e2e8f0}.v19-result{font-weight:900;border-radius:999px;padding:5px 9px}.v19-result.勝{background:#dcfce7;color:#166534}.v19-result.敗{background:#fee2e2;color:#991b1b}.v19-result.分{background:#f1f5f9;color:#475569}
+.v19-bottom-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}.v19-bottom-actions button{min-height:48px;font-weight:900}
+@media(max-width:850px){.v19-status-grid{grid-template-columns:repeat(2,1fr)}.v19-kpi-grid{grid-template-columns:repeat(3,1fr)}.v19-layout{grid-template-columns:1fr}.v19-bottom-actions{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.v19-hero{align-items:flex-start;flex-direction:column}.v19-status-grid,.v19-kpi-grid{grid-template-columns:repeat(2,1fr)}.v19-actions{grid-template-columns:1fr}.v19-player-list button{align-items:flex-start;flex-direction:column}}

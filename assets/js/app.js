@@ -1,5 +1,5 @@
 
-const V1822_CACHE_VERSION='18.2.2';
+const V1822_CACHE_VERSION='19.0.0';
 async function v1822EnsureFreshCache(){
   try{
     const saved=localStorage.getItem('furugen_cache_version');
@@ -9,9 +9,9 @@ async function v1822EnsureFreshCache(){
       const keys=await caches.keys();
       await Promise.all(keys.map(key=>caches.delete(key)));
       localStorage.setItem('furugen_cache_version',V1822_CACHE_VERSION);
-      if(!location.search.includes('fresh=1822')){
+      if(!location.search.includes('fresh=1900')){
         const u=new URL(location.href);
-        u.searchParams.set('fresh','1822');
+        u.searchParams.set('fresh','1900');
         location.replace(u.toString());
       }
     }
@@ -27,7 +27,7 @@ const detailCache=new Map();
 const DETAIL_CACHE_MS=5*60*1000;
 const $=id=>document.getElementById(id);
 function showMessage(text,type='warn'){const e=$('message');e.textContent=text;e.className=(type==='ok'?'notice success':'notice');e.classList.remove('hidden');setTimeout(()=>e.classList.add('hidden'),5000)}
-function showPage(id){document.querySelectorAll('.page').forEach(x=>x.classList.remove('show'));$(id).classList.add('show');if(id==='entry')renderRecordInputs();if(id==='analytics')setTimeout(renderAnalytics,0);if(id==='ai')setTimeout(testAiConnection,0);if(id==='reports')setTimeout(renderReportsPage,0);if(id==='video')setTimeout(renderVideoPage,0);if(id==='ver7')setTimeout(renderV7Page,0);if(id==='backup')setTimeout(v182RenderBackupCenter,0);if(id==='ai')setTimeout(v182RefreshAiSummary,100)}
+function showPage(id){document.querySelectorAll('.page').forEach(x=>x.classList.remove('show'));$(id).classList.add('show');if(id==='entry')renderRecordInputs();if(id==='analytics')setTimeout(renderAnalytics,0);if(id==='ai')setTimeout(testAiConnection,0);if(id==='reports')setTimeout(renderReportsPage,0);if(id==='video')setTimeout(renderVideoPage,0);if(id==='ver7')setTimeout(renderV7Page,0);if(id==='backup')setTimeout(v182RenderBackupCenter,0);if(id==='ver19')setTimeout(v19Render,0);if(id==='ai')setTimeout(v182RefreshAiSummary,100)}
 function isStaff(){return !!(profile&&profile.active&&['admin','coach'].includes(profile.role))}
 function esc(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 async function init(){const c=window.FURUGEN_CONFIG;if(!c||!c.SUPABASE_URL||!c.SUPABASE_ANON_KEY){showMessage('config.jsの設定がありません。');return}sb=supabase.createClient(c.SUPABASE_URL,c.SUPABASE_ANON_KEY);const x=await sb.auth.getSession();session=x.data.session;await loadProfile();await loadAll();setupRealtime();sb.auth.onAuthStateChange(async(_,s)=>{session=s;await loadProfile();await loadAll()});if('serviceWorker' in navigator)(async()=>{
@@ -36,7 +36,7 @@ async function init(){const c=window.FURUGEN_CONFIG;if(!c||!c.SUPABASE_URL||!c.S
     for(const reg of regs){ await reg.unregister(); }
     const keys=await caches.keys();
     await Promise.all(keys.map(key=>caches.delete(key)));
-    const reg=await navigator.serviceWorker.register('./sw-v1822.js?v=18.2.2',{updateViaCache:'none'});
+    const reg=await navigator.serviceWorker.register('./sw-v19.js?v=19.0.0',{updateViaCache:'none'});
     await reg.update();
   }catch(e){ console.warn('PWA cache reset failed',e); }
 })();setTimeout(v182Init,200)}
@@ -2364,7 +2364,7 @@ async function deleteV7Plan(id){if(!confirm('このAI案を削除しますか？
 
 
 /* =========================================================
-   Ver.18.2.2 AI分析・PWA・自動バックアップ
+   Ver.19.0 AI分析・PWA・自動バックアップ
 ========================================================= */
 const V182_BACKUP_KEY='furugen_v182_auto_backups';
 const V182_AUTO_KEY='furugen_v182_auto_backup_enabled';
@@ -2423,7 +2423,7 @@ function v182CollectLocalData(){
 function v182BuildBackup(){
   return {
     app:'古堅南FC AI Coach',
-    version:'18.2.2',
+    version:'19.0',
     createdAt:new Date().toISOString(),
     url:location.href,
     localStorage:v182CollectLocalData(),
@@ -2606,4 +2606,106 @@ function v182RefreshAiSummary(){
       <strong>${s.heat} ポイント</strong>
       <p>${s.heat?'記録済みの位置情報をヒートマップへ利用できます。':'動画画面で選手・ボール位置を記録すると、ここへ集計されます。'}</p>`;
   }
+}
+
+
+/* =========================================================
+   Ver.19.0 AI統合コマンドセンター
+   ========================================================= */
+function v19SafeNum(v){const n=Number(v);return Number.isFinite(n)?n:0}
+function v19ActivePlayers(){return (players||[]).filter(p=>!p.status||p.status==='現役')}
+function v19MatchResult(m){const gf=v19SafeNum(m.goals_for),ga=v19SafeNum(m.goals_against);return gf>ga?'勝':gf<ga?'敗':'分'}
+function v19PlayerScore(p){
+  try{
+    const t=totals(p);
+    return v19SafeNum(t.goals)*4+v19SafeNum(t.assists)*3+v19SafeNum(t.apps)+Math.round(v19SafeNum(t.minutes)/30)+v19SafeNum(t.mvp)*5;
+  }catch(e){return 0}
+}
+function v19TeamStats(){
+  const list=matches||[], wins=list.filter(m=>v19MatchResult(m)==='勝').length;
+  const gf=list.reduce((s,m)=>s+v19SafeNum(m.goals_for),0),ga=list.reduce((s,m)=>s+v19SafeNum(m.goals_against),0);
+  return {games:list.length,wins,draws:list.filter(m=>v19MatchResult(m)==='分').length,losses:list.filter(m=>v19MatchResult(m)==='敗').length,gf,ga,diff:gf-ga,rate:list.length?Math.round(wins/list.length*100):0};
+}
+function v19BuildAlerts(){
+  const out=[], active=v19ActivePlayers(), st=v19TeamStats();
+  if(!matches.length)out.push({level:'warn',text:'試合データが未登録です。最初の試合を登録してください。'});
+  if(matches.length && st.losses>=st.wins+2)out.push({level:'warn',text:'敗戦数が勝利数を上回っています。守備と試合開始10分の入り方を確認しましょう。'});
+  const noPos=active.filter(p=>!p.position).length;
+  if(noPos)out.push({level:'info',text:`ポジション未設定の現役選手が${noPos}人います。`});
+  const noGoal=active.filter(p=>{try{return totals(p).apps>0&&totals(p).goals===0}catch(e){return false}}).length;
+  if(noGoal>=Math.max(3,Math.ceil(active.length*.4)))out.push({level:'info',text:'得点者が一部選手に偏っている可能性があります。複数選手がゴールへ入る練習がおすすめです。'});
+  const lastBackup=localStorage.getItem('furugenLastAutoBackupAt');
+  if(!lastBackup)out.push({level:'warn',text:'自動バックアップ履歴がまだありません。データ保護画面を確認してください。'});
+  if(!navigator.onLine)out.push({level:'warn',text:'現在オフラインです。オンライン復帰後に同期状況を確認してください。'});
+  if(!out.length)out.push({level:'ok',text:'現在、大きな注意事項はありません。'});
+  return out;
+}
+function v19BuildSummary(){
+  const st=v19TeamStats(),active=v19ActivePlayers();
+  const top=[...active].sort((a,b)=>v19PlayerScore(b)-v19PlayerScore(a)).slice(0,3);
+  const recent=[...(matches||[])].sort((a,b)=>String(b.match_date||'').localeCompare(String(a.match_date||''))).slice(0,3);
+  return [
+    `【チーム状況】現役${active.length}人／試合${st.games}／${st.wins}勝${st.draws}分${st.losses}敗／勝率${st.rate}%`,
+    `【得点】${st.gf}　【失点】${st.ga}　【得失点差】${st.diff>=0?'+':''}${st.diff}`,
+    `【好調選手】${top.length?top.map(p=>p.name).join('・'):'集計対象なし'}`,
+    `【直近試合】${recent.length?recent.map(m=>`${m.match_date||''} 対${m.opponent||'-'} ${v19SafeNum(m.goals_for)}-${v19SafeNum(m.goals_against)}`).join(' / '):'未登録'}`,
+    `【AI提案】${st.games===0?'まず試合登録と選手評価入力を進めましょう。':st.diff<0?'守備ブロック、切替、失点直後の対応を優先しましょう。':st.rate<50?'決定機の質と試合終盤の判断を改善しましょう。':'現在の強みを維持し、複数得点者を育てましょう。'}`
+  ].join('\n');
+}
+async function v19CheckAi(){
+  const state=$('v19AiState'),detail=$('v19AiDetail');
+  if(!state)return;
+  state.textContent='確認中';detail.textContent='AIサーバーへ接続しています';
+  try{
+    const r=await fetch(aiSettings().url+'/health',{cache:'no-store'});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error();
+    state.textContent=d.api_key_configured?'接続済み':'要設定';
+    detail.textContent=d.api_key_configured?'ChatGPT連携を利用できます':'APIキー設定を確認してください';
+  }catch(e){state.textContent='未接続';detail.textContent='AI設定URLまたはRenderを確認してください'}
+}
+function v19Render(){
+  const st=v19TeamStats(),active=v19ActivePlayers();
+  if(!$('v19Players'))return;
+  $('v19Players').textContent=active.length;$('v19Matches').textContent=st.games;$('v19WinRate').textContent=st.rate+'%';
+  $('v19Goals').textContent=st.gf;$('v19Against').textContent=st.ga;$('v19GoalDiff').textContent=(st.diff>0?'+':'')+st.diff;
+  $('v19UpdatedAt').textContent=new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
+  const installed=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+  $('v19PwaState').textContent=installed?'アプリ起動':'ブラウザ起動';
+  $('v19PwaDetail').textContent=installed?'PWAとして利用中':'ホーム画面へ追加できます';
+  $('v19SaveState').textContent=localStorage.getItem('furugenAutosaveEnabled')==='false'?'停止':'有効';
+  $('v19SaveDetail').textContent=localStorage.getItem('furugenLastAutoBackupAt')?`最終 ${new Date(localStorage.getItem('furugenLastAutoBackupAt')).toLocaleString('ja-JP')}`:'初回保存待ち';
+  $('v19Summary').value=v19BuildSummary();
+
+  const alerts=v19BuildAlerts();$('v19AlertCount').textContent=alerts.length+'件';
+  $('v19Alerts').innerHTML=alerts.map(a=>`<div class="v19-alert ${a.level}">${a.level==='ok'?'✅':a.level==='warn'?'⚠️':'ℹ️'}<span>${esc(a.text)}</span></div>`).join('');
+
+  const top=[...active].sort((a,b)=>v19PlayerScore(b)-v19PlayerScore(a)).slice(0,5);
+  $('v19TopPlayers').innerHTML=top.map((p,i)=>{let t={goals:0,assists:0,apps:0,minutes:0};try{t=totals(p)}catch(e){}return `<button onclick="openPlayerDetail('${p.id}')"><b>${i+1}. ${esc(p.name)}</b><span>${esc(p.position||'-')} / ${t.goals}得点 ${t.assists}アシスト ${t.apps}試合</span></button>`}).join('')||'<p class="muted">選手データがありません。</p>';
+
+  const recent=[...(matches||[])].sort((a,b)=>String(b.match_date||'').localeCompare(String(a.match_date||''))).slice(0,5);
+  $('v19RecentMatches').innerHTML=recent.map(m=>`<div><b>${esc(m.match_date||'日付未設定')}　対 ${esc(m.opponent||'-')}</b><span class="v19-result ${v19MatchResult(m)}">${v19SafeNum(m.goals_for)}-${v19SafeNum(m.goals_against)} ${v19MatchResult(m)}</span></div>`).join('')||'<p class="muted">試合データがありません。</p>';
+  v19CheckAi();
+}
+function v19Prompt(type){
+  const base=v19BuildSummary();
+  const map={
+    team:'このチーム状況を分析し、強み3つ、改善優先順位3つ、次の1週間で実行することを提案してください。',
+    next:'次戦に向けて、試合の入り方、攻撃、守備、交代策、選手への声かけを提案してください。',
+    training:'このチーム状況に合う小学生向け75分練習を、ウォームアップ・技術・判断・ゲーム・振り返りで作成してください。',
+    parents:'保護者向けに、前向きで分かりやすいチーム近況報告を作成してください。'
+  };
+  return `${map[type]||map.team}\n\n${base}`;
+}
+function v19OpenAi(type){
+  showPage('ai');
+  setAiMode(type==='training'?'training':type==='parents'?'parents':'match',document.querySelector(`[data-mode="${type==='training'?'training':type==='parents'?'parents':'match'}"]`));
+  setAiPrompt(v19Prompt(type));
+}
+async function v19CopySummary(){try{await navigator.clipboard.writeText(v19BuildSummary());showMessage('Ver.19要約をコピーしました。','ok')}catch(e){showMessage('コピーできませんでした。')}}
+function v19DownloadSnapshot(){
+  const payload={version:'19.0',created_at:new Date().toISOString(),summary:v19BuildSummary(),team:v19TeamStats(),alerts:v19BuildAlerts(),players:v19ActivePlayers().map(p=>({id:p.id,name:p.name,grade:p.grade,position:p.position,score:v19PlayerScore(p)})),recent_matches:[...(matches||[])].slice(-10)};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`furugen-ver19-snapshot-${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  localStorage.setItem('furugenLastAutoBackupAt',new Date().toISOString());showMessage('Ver.19スナップショットを書き出しました。','ok');
 }
