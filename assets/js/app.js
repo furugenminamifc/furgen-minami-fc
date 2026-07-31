@@ -9,7 +9,9 @@ function showMessage(text,type='warn'){const e=$('message');e.textContent=text;e
 function showPage(id){document.querySelectorAll('.page').forEach(x=>x.classList.remove('show'));$(id).classList.add('show');if(id==='entry')renderRecordInputs();if(id==='analytics')setTimeout(renderAnalytics,0);if(id==='ai')setTimeout(testAiConnection,0);if(id==='reports')setTimeout(renderReportsPage,0);if(id==='video')setTimeout(renderVideoPage,0);if(id==='ver7')setTimeout(renderV7Page,0);if(id==='backup')setTimeout(v182RenderBackupCenter,0);if(id==='ai')setTimeout(v182RefreshAiSummary,100)}
 function isStaff(){return !!(profile&&profile.active&&['admin','coach'].includes(profile.role))}
 function esc(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
-async function init(){const c=window.FURUGEN_CONFIG;if(!c||!c.SUPABASE_URL||!c.SUPABASE_ANON_KEY){showMessage('config.jsの設定がありません。');return}sb=supabase.createClient(c.SUPABASE_URL,c.SUPABASE_ANON_KEY);const x=await sb.auth.getSession();session=x.data.session;await loadProfile();await loadAll();setupRealtime();sb.auth.onAuthStateChange(async(_,s)=>{session=s;await loadProfile();await loadAll()});if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});setTimeout(v182Init,200)}
+async function init(){const c=window.FURUGEN_CONFIG;if(!c||!c.SUPABASE_URL||!c.SUPABASE_ANON_KEY){showMessage('config.jsの設定がありません。');return}sb=supabase.createClient(c.SUPABASE_URL,c.SUPABASE_ANON_KEY);const x=await sb.auth.getSession();session=x.data.session;await loadProfile();await loadAll();setupRealtime();sb.auth.onAuthStateChange(async(_,s)=>{session=s;await loadProfile();await loadAll()});if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js?v=18.2.1',{updateViaCache:'none'})
+.then(reg=>reg.update())
+.catch(()=>{});setTimeout(v182Init,200)}
 async function loadProfile(){profile=null;if(session){const r=await sb.from('profiles').select('*').eq('id',session.user.id).maybeSingle();profile=r.data}const staff=isStaff();$('mode').textContent=staff?`${session.user.email}（${profile.role==='admin'?'管理者':'コーチ'}）`:'保護者閲覧モード';$('loginOut').classList.toggle('hidden',!!session);$('loginIn').classList.toggle('hidden',!session);$('entryForm').classList.toggle('hidden',!staff);$('needLogin').classList.toggle('hidden',staff);$('addPlayerBtn').classList.toggle('hidden',!staff);if(session)$('loginWho').textContent=`${session.user.email} / 権限：${profile?.role||'未設定'}`}
 async function loadAll(){
  const [p,m,r,t,rp,vn,v7]=await Promise.all([
@@ -2334,7 +2336,7 @@ async function deleteV7Plan(id){if(!confirm('このAI案を削除しますか？
 
 
 /* =========================================================
-   Ver.18.2 AI分析・PWA・自動バックアップ
+   Ver.18.2.1 AI分析・PWA・自動バックアップ
 ========================================================= */
 const V182_BACKUP_KEY='furugen_v182_auto_backups';
 const V182_AUTO_KEY='furugen_v182_auto_backup_enabled';
@@ -2393,7 +2395,7 @@ function v182CollectLocalData(){
 function v182BuildBackup(){
   return {
     app:'古堅南FC AI Coach',
-    version:'18.2',
+    version:'18.2.1',
     createdAt:new Date().toISOString(),
     url:location.href,
     localStorage:v182CollectLocalData(),

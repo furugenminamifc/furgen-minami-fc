@@ -1,4 +1,4 @@
-const C='furugen-ver182-cache-18.2.0';
+const C='furugen-ver1821-cache-18.2.1';
 const CORE=[
  './','./index.html','./config.js','./manifest.webmanifest',
  './assets/css/app.css','./assets/js/app.js',

@@ -1,8 +1,8 @@
 {
-  "name": "古堅南FC AI Coach",
+  "name": "古堅南FC AI Coach Ver.18.2.1",
   "short_name": "古堅南FC AI",
-  "description": "少年サッカーの試合・選手・動画分析を支えるAIコーチングシステム",
-  "start_url": "./?source=pwa",
+  "description": "古堅南FC AI Coach Ver.18.2.1 表示修正版",
+  "start_url": "./?v=18.2.1&source=pwa",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
@@ -27,5 +27,6 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "id": "./?app=furugen-ai-coach-v18.2.1"
 }
