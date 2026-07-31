@@ -1,8 +1,8 @@
 {
-  "name": "古堅南FC AI Coach Ver.19.0",
+  "name": "古堅南FC AI Coach Ver.19.1",
   "short_name": "古堅南FC AI",
-  "description": "古堅南FC AI Coach Ver.19.0 AI統合コマンドセンター",
-  "start_url": "./?v=19.0.0&source=pwa",
+  "description": "古堅南FC AI Coach Ver.19.1 AI監督ダッシュボード",
+  "start_url": "./?v=19.1.0&source=pwa",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
@@ -28,5 +28,5 @@
       "purpose": "any maskable"
     }
   ],
-  "id": "./?app=furugen-ai-coach-v19"
+  "id": "./?app=furugen-ai-coach-v19.1"
 }

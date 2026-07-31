@@ -1,5 +1,5 @@
 
-const V1822_CACHE_VERSION='19.0.0';
+const V1822_CACHE_VERSION='19.1.0';
 async function v1822EnsureFreshCache(){
   try{
     const saved=localStorage.getItem('furugen_cache_version');
@@ -9,9 +9,9 @@ async function v1822EnsureFreshCache(){
       const keys=await caches.keys();
       await Promise.all(keys.map(key=>caches.delete(key)));
       localStorage.setItem('furugen_cache_version',V1822_CACHE_VERSION);
-      if(!location.search.includes('fresh=1900')){
+      if(!location.search.includes('fresh=1910')){
         const u=new URL(location.href);
-        u.searchParams.set('fresh','1900');
+        u.searchParams.set('fresh','1910');
         location.replace(u.toString());
       }
     }
@@ -27,7 +27,7 @@ const detailCache=new Map();
 const DETAIL_CACHE_MS=5*60*1000;
 const $=id=>document.getElementById(id);
 function showMessage(text,type='warn'){const e=$('message');e.textContent=text;e.className=(type==='ok'?'notice success':'notice');e.classList.remove('hidden');setTimeout(()=>e.classList.add('hidden'),5000)}
-function showPage(id){document.querySelectorAll('.page').forEach(x=>x.classList.remove('show'));$(id).classList.add('show');if(id==='entry')renderRecordInputs();if(id==='analytics')setTimeout(renderAnalytics,0);if(id==='ai')setTimeout(testAiConnection,0);if(id==='reports')setTimeout(renderReportsPage,0);if(id==='video')setTimeout(renderVideoPage,0);if(id==='ver7')setTimeout(renderV7Page,0);if(id==='backup')setTimeout(v182RenderBackupCenter,0);if(id==='ver19')setTimeout(v19Render,0);if(id==='ai')setTimeout(v182RefreshAiSummary,100)}
+function showPage(id){document.querySelectorAll('.page').forEach(x=>x.classList.remove('show'));$(id).classList.add('show');if(id==='entry')renderRecordInputs();if(id==='analytics')setTimeout(renderAnalytics,0);if(id==='ai')setTimeout(testAiConnection,0);if(id==='reports')setTimeout(renderReportsPage,0);if(id==='video')setTimeout(renderVideoPage,0);if(id==='ver7')setTimeout(renderV7Page,0);if(id==='backup')setTimeout(v182RenderBackupCenter,0);if(id==='ver19')setTimeout(()=>{v19Render();v191Render();},0);if(id==='ai')setTimeout(v182RefreshAiSummary,100)}
 function isStaff(){return !!(profile&&profile.active&&['admin','coach'].includes(profile.role))}
 function esc(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 async function init(){const c=window.FURUGEN_CONFIG;if(!c||!c.SUPABASE_URL||!c.SUPABASE_ANON_KEY){showMessage('config.jsの設定がありません。');return}sb=supabase.createClient(c.SUPABASE_URL,c.SUPABASE_ANON_KEY);const x=await sb.auth.getSession();session=x.data.session;await loadProfile();await loadAll();setupRealtime();sb.auth.onAuthStateChange(async(_,s)=>{session=s;await loadProfile();await loadAll()});if('serviceWorker' in navigator)(async()=>{
@@ -36,7 +36,7 @@ async function init(){const c=window.FURUGEN_CONFIG;if(!c||!c.SUPABASE_URL||!c.S
     for(const reg of regs){ await reg.unregister(); }
     const keys=await caches.keys();
     await Promise.all(keys.map(key=>caches.delete(key)));
-    const reg=await navigator.serviceWorker.register('./sw-v19.js?v=19.0.0',{updateViaCache:'none'});
+    const reg=await navigator.serviceWorker.register('./sw-v191.js?v=19.1.0',{updateViaCache:'none'});
     await reg.update();
   }catch(e){ console.warn('PWA cache reset failed',e); }
 })();setTimeout(v182Init,200)}
@@ -2364,7 +2364,7 @@ async function deleteV7Plan(id){if(!confirm('このAI案を削除しますか？
 
 
 /* =========================================================
-   Ver.19.0 AI分析・PWA・自動バックアップ
+   Ver.19.1 AI分析・PWA・自動バックアップ
 ========================================================= */
 const V182_BACKUP_KEY='furugen_v182_auto_backups';
 const V182_AUTO_KEY='furugen_v182_auto_backup_enabled';
@@ -2423,7 +2423,7 @@ function v182CollectLocalData(){
 function v182BuildBackup(){
   return {
     app:'古堅南FC AI Coach',
-    version:'19.0',
+    version:'19.1',
     createdAt:new Date().toISOString(),
     url:location.href,
     localStorage:v182CollectLocalData(),
@@ -2610,7 +2610,7 @@ function v182RefreshAiSummary(){
 
 
 /* =========================================================
-   Ver.19.0 AI統合コマンドセンター
+   Ver.19.1 AI統合コマンドセンター
    ========================================================= */
 function v19SafeNum(v){const n=Number(v);return Number.isFinite(n)?n:0}
 function v19ActivePlayers(){return (players||[]).filter(p=>!p.status||p.status==='現役')}
@@ -2686,6 +2686,7 @@ function v19Render(){
   const recent=[...(matches||[])].sort((a,b)=>String(b.match_date||'').localeCompare(String(a.match_date||''))).slice(0,5);
   $('v19RecentMatches').innerHTML=recent.map(m=>`<div><b>${esc(m.match_date||'日付未設定')}　対 ${esc(m.opponent||'-')}</b><span class="v19-result ${v19MatchResult(m)}">${v19SafeNum(m.goals_for)}-${v19SafeNum(m.goals_against)} ${v19MatchResult(m)}</span></div>`).join('')||'<p class="muted">試合データがありません。</p>';
   v19CheckAi();
+  v191Render();
 }
 function v19Prompt(type){
   const base=v19BuildSummary();
@@ -2704,8 +2705,173 @@ function v19OpenAi(type){
 }
 async function v19CopySummary(){try{await navigator.clipboard.writeText(v19BuildSummary());showMessage('Ver.19要約をコピーしました。','ok')}catch(e){showMessage('コピーできませんでした。')}}
 function v19DownloadSnapshot(){
-  const payload={version:'19.0',created_at:new Date().toISOString(),summary:v19BuildSummary(),team:v19TeamStats(),alerts:v19BuildAlerts(),players:v19ActivePlayers().map(p=>({id:p.id,name:p.name,grade:p.grade,position:p.position,score:v19PlayerScore(p)})),recent_matches:[...(matches||[])].slice(-10)};
+  const payload={version:'19.1',created_at:new Date().toISOString(),summary:v19BuildSummary(),team:v19TeamStats(),alerts:v19BuildAlerts(),players:v19ActivePlayers().map(p=>({id:p.id,name:p.name,grade:p.grade,position:p.position,score:v19PlayerScore(p)})),recent_matches:[...(matches||[])].slice(-10)};
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`furugen-ver19-snapshot-${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
   localStorage.setItem('furugenLastAutoBackupAt',new Date().toISOString());showMessage('Ver.19スナップショットを書き出しました。','ok');
+}
+
+
+/* =========================================================
+   Ver.19.1 AI監督ダッシュボード
+   ========================================================= */
+let v191SpotlightPlayerId = null;
+
+function v191Clamp(n,min,max){return Math.max(min,Math.min(max,n))}
+function v191RecentMatches(limit=5){
+  return [...(matches||[])].sort((a,b)=>String(b.match_date||'').localeCompare(String(a.match_date||''))).slice(0,limit);
+}
+function v191PlayerData(p){
+  let t={goals:0,assists:0,apps:0,minutes:0,mvp:0,yellow:0,red:0};
+  try{t=totals(p)||t}catch(e){}
+  const score=(Number(t.goals)||0)*5+(Number(t.assists)||0)*4+(Number(t.apps)||0)*1.2+
+    Math.min(20,(Number(t.minutes)||0)/25)+(Number(t.mvp)||0)*5-
+    (Number(t.yellow)||0)*1.5-(Number(t.red)||0)*4;
+  return {p,t,score};
+}
+function v191Forecast(){
+  const st=v19TeamStats();
+  const recent=v191RecentMatches(5);
+  if(!st.games)return {value:50,reason:'試合データが少ないため、基準値50%で表示しています。'};
+  const recentPoints=recent.reduce((s,m)=>s+(v19MatchResult(m)==='勝'?3:v19MatchResult(m)==='分'?1:0),0);
+  const recentRate=recent.length?recentPoints/(recent.length*3):.5;
+  const goalBalance=v191Clamp((st.diff/(Math.max(1,st.games)*2)+1)/2,0,1);
+  const seasonRate=st.rate/100;
+  const value=Math.round(v191Clamp((seasonRate*.45+recentRate*.35+goalBalance*.20)*100,15,85));
+  let reason='勝率・直近成績・得失点差を組み合わせて算出しました。';
+  if(value>=65)reason='直近成績と得失点差が良好です。先制点を取れれば優位に進められます。';
+  else if(value<=40)reason='守備の安定と試合序盤の入り方が重要です。失点を抑える準備を優先しましょう。';
+  return {value,reason};
+}
+function v191Spotlight(){
+  const list=v19ActivePlayers().map(v191PlayerData).sort((a,b)=>b.score-a.score);
+  if(!list.length)return null;
+  const top=list[0];
+  const reasons=[];
+  if(top.t.goals)reasons.push(`${top.t.goals}得点`);
+  if(top.t.assists)reasons.push(`${top.t.assists}アシスト`);
+  if(top.t.apps)reasons.push(`${top.t.apps}試合出場`);
+  return {player:top.p,reason:reasons.join('・')||'登録データの総合評価が高い選手です。'};
+}
+function v191ConditionData(){
+  const st=v19TeamStats();
+  const active=v19ActivePlayers();
+  let score=60;
+  score+=Math.min(18,st.rate*.18);
+  score+=v191Clamp(st.diff*2,-15,15);
+  if(active.length>=8)score+=5;
+  score=Math.round(v191Clamp(score,25,95));
+  let label=score>=78?'好調':score>=60?'安定':score>=45?'調整中':'要注意';
+  const tags=[];
+  if(st.diff>0)tags.push('得失点プラス');
+  if(st.rate>=50)tags.push('勝率50%以上');
+  if(st.ga>st.gf)tags.push('守備改善');
+  if(!st.games)tags.push('試合入力待ち');
+  if(active.length<8)tags.push('登録選手確認');
+  return {score,label,tags,note:score>=78?'良い流れです。強度を保ちながら判断スピードを高めましょう。':score>=60?'大きな崩れはありません。決定機の質を上げる練習がおすすめです。':'基礎と守備の約束事を整理し、成功体験を増やしましょう。'};
+}
+function v191AdviceText(){
+  const f=v191Forecast(),c=v191ConditionData(),st=v19TeamStats();
+  if(!st.games)return 'まずは試合データを1試合ずつ積み上げよう。記録が、次の成長につながります。';
+  if(f.value>=65)return '良い流れを自信に変えよう。最初の5分から前向きにボールを奪いにいこう。';
+  if(st.diff<0)return '失点を恐れず、全員で戻る・声をかける・次のプレーへ切り替えることを徹底しよう。';
+  if(c.score<55)return '難しいことを増やさず、今日できる一つの約束を全員でやり切ろう。';
+  return '結果だけでなく、判断・挑戦・切り替えを評価しよう。今日の一歩が次の勝利をつくります。';
+}
+function v191LineupCandidates(){
+  return v19ActivePlayers().map(v191PlayerData).sort((a,b)=>b.score-a.score);
+}
+function v191BuildLineup(){
+  const root=$('v191Lineup'); if(!root)return;
+  const formation=$('v191Formation')?.value||'3-2-2';
+  const priority=$('v191Priority')?.value||'balance';
+  let list=v191LineupCandidates();
+  if(priority==='growth')list=[...list].sort((a,b)=>(a.t.apps||0)-(b.t.apps||0));
+  if(priority==='attack')list=[...list].sort((a,b)=>((b.t.goals||0)*3+(b.t.assists||0)*2)-((a.t.goals||0)*3+(a.t.assists||0)*2));
+  if(priority==='defense')list=[...list].sort((a,b)=>{
+    const bp=String(b.p.position||''),ap=String(a.p.position||'');
+    return ((bp.includes('GP')||bp.includes('DF'))?10:0)-((ap.includes('GP')||ap.includes('DF'))?10:0)+b.score-a.score;
+  });
+  const picked=list.slice(0,8);
+  const nums=formation.split('-').map(Number);
+  const groups=[
+    {name:'GP',count:1},
+    {name:'DF',count:nums[0]||3},
+    {name:'MF',count:nums[1]||2},
+    {name:'FW',count:nums[2]||2}
+  ];
+  let cursor=0;
+  root.innerHTML=groups.map(g=>{
+    const arr=picked.slice(cursor,cursor+g.count);cursor+=g.count;
+    return `<div class="v191-line"><b>${g.name}</b><div>${arr.map(x=>`<button onclick="openPlayerDetail('${x.p.id}')"><strong>${esc(x.p.name)}</strong><small>${esc(x.p.position||'-')}</small></button>`).join('')||'<span>未選出</span>'}</div></div>`;
+  }).join('');
+}
+function v191BuildTraining(){
+  const root=$('v191TrainingPlan'); if(!root)return;
+  const st=v19TeamStats();
+  const focus=st.games===0?'記録と基礎技術':st.diff<0?'守備の切り替えと連係':st.rate<50?'決定機の質とフィニッシュ':'判断スピードと複数人の関わり';
+  const items=[
+    ['10分','ウォームアップ','ボールを使った鬼ごっこ＋認知判断'],
+    ['15分','技術','対面パス・ファーストタッチ・身体の向き'],
+    ['15分','テーマ練習',focus],
+    ['20分','条件付きゲーム','3タッチ以内／奪ったら5秒以内に前進'],
+    ['10分','ゲーム','自由な試合で今日のテーマを確認'],
+    ['5分','振り返り','良かった判断を選手同士で共有']
+  ];
+  root.innerHTML=items.map(i=>`<div><time>${i[0]}</time><b>${i[1]}</b><span>${i[2]}</span></div>`).join('');
+}
+function v191GenerateDailyPlan(){
+  const f=v191Forecast(),c=v191ConditionData(),spot=v191Spotlight(),st=v19TeamStats();
+  const report=[
+    '【古堅南FC Ver.19.1 本日のAI監督レポート】',
+    `チームコンディション：${c.label}（${c.score}点）`,
+    `次戦勝率予測：${f.value}%`,
+    `予測理由：${f.reason}`,
+    `今日の注目選手：${spot?spot.player.name:'未選出'}${spot?'（'+spot.reason+'）':''}`,
+    `本日の重点：${st.diff<0?'守備の切り替え・戻るスピード・声かけ':st.rate<50?'決定機での落ち着き・ゴール前への人数':'判断スピード・連続したサポート・複数得点者'}`,
+    `AI監督からの一言：${v191AdviceText()}`,
+    '',
+    '【コーチへの提案】',
+    '1. 練習前に今日の約束を1つだけ伝える',
+    '2. 成功した判断を具体的な言葉で褒める',
+    '3. 練習最後のゲームでテーマを確認する'
+  ].join('\n');
+  $('v191DirectorReport').value=report;
+  showMessage('本日のAI監督プランを作成しました。','ok');
+}
+function v191Render(){
+  const f=v191Forecast(),c=v191ConditionData(),spot=v191Spotlight();
+  if(!$('v191WinForecast'))return;
+  $('v191WinForecast').textContent=f.value+'%';
+  $('v191WinMeter').style.width=f.value+'%';
+  $('v191WinReason').textContent=f.reason;
+  $('v191Condition').textContent=`${c.label} ${c.score}点`;
+  $('v191ConditionTags').innerHTML=c.tags.map(t=>`<span>${esc(t)}</span>`).join('');
+  $('v191ConditionNote').textContent=c.note;
+  $('v191Advice').textContent='「'+v191AdviceText()+'」';
+  if(spot){
+    v191SpotlightPlayerId=spot.player.id;
+    $('v191SpotlightName').textContent=spot.player.name;
+    $('v191SpotlightReason').textContent=spot.reason;
+  }else{
+    v191SpotlightPlayerId=null;
+    $('v191SpotlightName').textContent='未選出';
+    $('v191SpotlightReason').textContent='選手データがありません。';
+  }
+  v191BuildLineup();
+  v191BuildTraining();
+}
+function v191OpenSpotlight(){if(v191SpotlightPlayerId)openPlayerDetail(v191SpotlightPlayerId)}
+async function v191CopyAdvice(){try{await navigator.clipboard.writeText(v191AdviceText());showMessage('AI監督の一言をコピーしました。','ok')}catch(e){showMessage('コピーできませんでした。')}}
+async function v191CopyReport(){try{await navigator.clipboard.writeText($('v191DirectorReport').value||'');showMessage('AI監督レポートをコピーしました。','ok')}catch(e){showMessage('コピーできませんでした。')}}
+function v191DownloadReport(){
+  const text=$('v191DirectorReport').value||'';
+  if(!text){showMessage('先にAI監督プランを作成してください。');return}
+  const blob=new Blob([text],{type:'text/plain;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`古堅南FC_AI監督レポート_${new Date().toISOString().slice(0,10)}.txt`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+function v191SendTrainingToAi(){
+  showPage('ai');
+  setAiMode('training',document.querySelector('[data-mode="training"]'));
+  setAiPrompt(`小学生サッカーチーム向けに、75分の練習メニューを詳しく作成してください。\nチーム状況：${v19BuildSummary()}\n重点：${v19TeamStats().diff<0?'守備の切り替えと連係':v19TeamStats().rate<50?'決定機の質とフィニッシュ':'判断スピードと複数人の関わり'}\n安全面、声かけ、難易度調整も含めてください。`);
 }

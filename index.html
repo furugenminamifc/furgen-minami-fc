@@ -8,14 +8,14 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0284c7">
 <link rel="manifest" href="./manifest.webmanifest">
-<title>古堅南FC AI Coach Ver.19.0</title>
+<title>古堅南FC AI Coach Ver.19.1</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<link rel="stylesheet" href="./assets/css/app.css?v=19.0.0">
+<link rel="stylesheet" href="./assets/css/app.css?v=19.1.0">
 </head>
 <body>
-<header><div class="title"><span id="teamBrand"><img id="headerEmblem" class="header-emblem hidden" alt="エンブレム">⚽ 古堅南FC AI Coach Ver.19.0</span></div><div id="mode" class="subtitle">保護者閲覧モード</div></header>
+<header><div class="title"><span id="teamBrand"><img id="headerEmblem" class="header-emblem hidden" alt="エンブレム">⚽ 古堅南FC AI Coach Ver.19.1</span></div><div id="mode" class="subtitle">保護者閲覧モード</div></header>
 <nav>
 <button onclick="showPage('home')">ホーム</button><button onclick="showPage('players')">選手</button><button onclick="showPage('matches')">試合</button><button onclick="showPage('entry')">試合入力</button><button onclick="showPage('ranking')">ランキング</button><button onclick="showPage('analytics')">試合分析</button><button onclick="showPage('reports')">📄 レポート</button><button onclick="showPage('video')">🎥 動画メモ</button><button onclick="showPage('ai')">🤖 AI</button><button onclick="showPage('coach')">🧠 AI Coach</button><button onclick="showPage('ver7')">🚀 Ver.7 AI分析</button><button onclick="showPage('ver19')">🚀 Ver.19</button><button onclick="showPage('backup')">🛡️ データ保護</button><button id="settingsNav" class="hidden" onclick="showPage('settings')">チーム設定</button><button onclick="showPage('login')">コーチログイン</button>
 </nav>
@@ -78,7 +78,7 @@
 <section id="ai" class="page">
   <div class="v182-ai-overview">
     <div>
-      <span>Ver.19.0 AI分析強化</span>
+      <span>Ver.19.1 AI分析強化</span>
       <h2>🤖 AI分析センター</h2>
       <p>試合・選手・動画記録をまとめて、コーチが判断しやすい形へ整理します。</p>
     </div>
@@ -202,7 +202,7 @@
 <section id="video" class="page">
   <div class="video181-hero">
     <div>
-      <span>古堅南FC AI Coach Ver.19.0</span>
+      <span>古堅南FC AI Coach Ver.19.1</span>
       <h2>🎥 AI動画分析</h2>
       <p>「動画を選ぶ → 記録する → AIでまとめる」の順番で使えます。</p>
     </div>
@@ -413,7 +413,7 @@
   <div class="video17-engine">
     <div class="video17-head">
       <div>
-        <span>古堅南FC AI Coach Ver.19.0</span>
+        <span>古堅南FC AI Coach Ver.19.1</span>
         <h3>🧠 AI Vision Engine</h3>
         <p>追跡候補を蓄積し、移動・保持・フォーメーション・ヒートマップを自動集計します。</p>
       </div>
@@ -668,7 +668,7 @@
 <section id="coach" class="page">
   <div class="coach11-hero">
     <div>
-      <span class="coach-version">古堅南FC AI Coach Ver.19.0</span>
+      <span class="coach-version">古堅南FC AI Coach Ver.19.1</span>
       <h2>AI分析・PWA・自動バックアップ統合版</h2>
       <p>迷わず、5分で、次の指導まで。必要な機能だけを順番に使えます。</p>
     </div>
@@ -1024,14 +1024,101 @@
 <section id="ver19" class="page">
   <div class="v19-hero">
     <div>
-      <span class="v19-badge">Ver.19.0</span>
+      <span class="v19-badge">Ver.19.1</span>
       <h2>🚀 AI統合コマンドセンター</h2>
       <p>チーム状況・試合・選手成長・AI接続・バックアップを1画面で確認できます。</p>
     </div>
     <button class="v19-refresh" onclick="v19Render()">最新状態に更新</button>
   </div>
 
-  <div class="v19-status-grid">
+  
+  <div class="v191-section-title">
+    <div>
+      <span>AI監督モード</span>
+      <h3>今日のチーム判断を、1画面で確認</h3>
+    </div>
+    <button onclick="v191GenerateDailyPlan()">本日のAI監督プランを作成</button>
+  </div>
+
+  <div class="v191-director-grid">
+    <article class="v191-director-card v191-highlight">
+      <small>次戦 勝率予測</small>
+      <strong id="v191WinForecast">--%</strong>
+      <div class="v191-meter"><i id="v191WinMeter"></i></div>
+      <p id="v191WinReason">試合データから予測します。</p>
+    </article>
+
+    <article class="v191-director-card">
+      <small>今日の注目選手</small>
+      <strong id="v191SpotlightName">未選出</strong>
+      <p id="v191SpotlightReason">選手データを集計します。</p>
+      <button onclick="v191OpenSpotlight()">選手詳細を見る</button>
+    </article>
+
+    <article class="v191-director-card">
+      <small>チームコンディション</small>
+      <strong id="v191Condition">確認中</strong>
+      <div id="v191ConditionTags" class="v191-tags"></div>
+      <p id="v191ConditionNote">データを確認しています。</p>
+    </article>
+
+    <article class="v191-director-card">
+      <small>AI監督から本日の一言</small>
+      <blockquote id="v191Advice">「チームの現在地を確認しています。」</blockquote>
+      <button onclick="v191CopyAdvice()">一言をコピー</button>
+    </article>
+  </div>
+
+  <div class="v191-main-grid">
+    <section class="v19-panel">
+      <div class="v19-panel-head">
+        <h3>📋 AIスタメン候補</h3>
+        <button onclick="v191BuildLineup()">再提案</button>
+      </div>
+      <div class="v191-lineup-controls">
+        <label>フォーメーション
+          <select id="v191Formation" onchange="v191BuildLineup()">
+            <option>3-2-2</option>
+            <option>2-3-2</option>
+            <option>3-3-1</option>
+            <option>2-2-3</option>
+          </select>
+        </label>
+        <label>重視する項目
+          <select id="v191Priority" onchange="v191BuildLineup()">
+            <option value="balance">バランス</option>
+            <option value="attack">攻撃力</option>
+            <option value="defense">守備力</option>
+            <option value="growth">成長機会</option>
+          </select>
+        </label>
+      </div>
+      <div id="v191Lineup" class="v191-lineup"></div>
+      <p class="v191-note">※ 登録データをもとにした参考提案です。最終判断はコーチが行ってください。</p>
+    </section>
+
+    <section class="v19-panel">
+      <div class="v19-panel-head">
+        <h3>🏃 次回75分練習メニュー</h3>
+        <button onclick="v191BuildTraining()">更新</button>
+      </div>
+      <div id="v191TrainingPlan" class="v191-training-plan"></div>
+      <button class="v191-wide-btn" onclick="v191SendTrainingToAi()">ChatGPTで詳しく作成</button>
+    </section>
+  </div>
+
+  <section class="v19-panel v191-report-panel">
+    <div class="v19-panel-head">
+      <h3>🧠 本日のAI監督レポート</h3>
+      <div>
+        <button onclick="v191CopyReport()">コピー</button>
+        <button onclick="v191DownloadReport()">保存</button>
+      </div>
+    </div>
+    <textarea id="v191DirectorReport" readonly placeholder="「本日のAI監督プランを作成」を押すと、ここに表示されます。"></textarea>
+  </section>
+
+<div class="v19-status-grid">
     <article><small>AIサーバー</small><strong id="v19AiState">確認中</strong><span id="v19AiDetail">接続確認を行います</span></article>
     <article><small>PWA</small><strong id="v19PwaState">確認中</strong><span id="v19PwaDetail">インストール状態</span></article>
     <article><small>自動保存</small><strong id="v19SaveState">有効</strong><span id="v19SaveDetail">端末内バックアップ</span></article>
@@ -1086,7 +1173,7 @@
 <section id="backup" class="page">
   <div class="v182-backup-hero">
     <div>
-      <span>Ver.19.0</span>
+      <span>Ver.19.1</span>
       <h2>🛡️ データ保護・PWA設定</h2>
       <p>自動保存、JSONバックアップ、復元、オフライン利用をまとめて管理します。</p>
     </div>
@@ -1220,7 +1307,7 @@
 <div class="muted">MacのDockerで使う場合は https://furugen-minami-ai.onrender.com。iPhoneから使う場合は、後でHTTPS公開したAIサーバーURLが必要です。</div><br>
 <label>チーム向け補足指示（任意）</label><textarea id="aiTeamInstruction" placeholder="例：小学生に伝わる言葉を使い、安全を最優先にする"></textarea><br>
 <button onclick="saveAiSettings()">保存</button> <button class="secondary" onclick="closeAiSettings()">閉じる</button></div></div>
-<script src="./assets/js/app.js?v=19.0.0"></script>
+<script src="./assets/js/app.js?v=19.1.0"></script>
 
 <script>
 (function(){
@@ -1240,7 +1327,7 @@
 </script>
 
 <div id="v1822CacheNotice" style="display:none;position:fixed;left:12px;right:12px;bottom:12px;z-index:99999;background:#0f172a;color:white;padding:12px 14px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.25);font-weight:800">
-Ver.19.0の更新が必要です。
-<a href="./cache-reset.html?v=19.0.0" style="color:#7dd3fc;margin-left:8px">キャッシュを更新</a>
+Ver.19.1の更新が必要です。
+<a href="./cache-reset.html?v=19.1.0" style="color:#7dd3fc;margin-left:8px">キャッシュを更新</a>
 </div>
 </body></html>
