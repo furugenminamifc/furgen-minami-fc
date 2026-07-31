@@ -7,7 +7,7 @@
 <meta http-equiv="Expires" content="0">
 <script>
 (function(){
-  window.__FURUGEN_BUILD__="20.0.1-20260731";
+  window.__FURUGEN_BUILD__="20.0.2-20260731";
   try{
     if('serviceWorker' in navigator){
       navigator.serviceWorker.getRegistrations().then(function(rs){
@@ -27,15 +27,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0284c7">
-<link rel="manifest" href="./manifest.webmanifest?build=20.0.1-20260731">
-<title>古堅南FC AI Coach Ver.20.0.1 誕生日お知らせ版</title>
+<link rel="manifest" href="./manifest.webmanifest?build=20.0.2-20260731">
+<title>古堅南FC AI Coach Ver.20.0.2 誕生日プライバシー版</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<link rel="stylesheet" href="./assets/css/app-v20.css?build=20.0.1-20260731">
+<link rel="stylesheet" href="./assets/css/app-v20.css?build=20.0.2-20260731">
 </head>
 <body>
-<header><div class="title"><span id="teamBrand"><img id="headerEmblem" class="header-emblem hidden" alt="エンブレム">⚽ 古堅南FC AI Coach Ver.20.0.1 誕生日お知らせ版</span></div><div id="mode" class="subtitle">保護者閲覧モード</div></header>
+<header><div class="title"><span id="teamBrand"><img id="headerEmblem" class="header-emblem hidden" alt="エンブレム">⚽ 古堅南FC AI Coach Ver.20.0.2 誕生日プライバシー版</span></div><div id="mode" class="subtitle">保護者閲覧モード</div></header>
 <nav>
 <button onclick="showPage('home')">ホーム</button><button onclick="showPage('birthdays');setTimeout(renderBirthdayCenter,0)">🎂 誕生日</button><button onclick="showPage('players')">選手</button><button onclick="showPage('matches')">試合</button><button onclick="showPage('entry')">試合入力</button><button onclick="showPage('ranking')">ランキング</button><button onclick="showPage('analytics')">試合分析</button><button onclick="showPage('reports')">📄 レポート</button><button onclick="showPage('video')">🎥 動画メモ</button><button onclick="showPage('ai')">🤖 AI</button><button onclick="showPage('coach')">🧠 AI Coach</button><button onclick="showPage('ver7')">🚀 Ver.7 AI分析</button><button onclick="showPage('ver19')">🚀 Ver.20</button><button onclick="showPage('backup')">🛡️ データ保護</button><button id="settingsNav" class="hidden" onclick="showPage('settings')">チーム設定</button><button onclick="showPage('login')">コーチログイン</button>
 </nav>
@@ -43,7 +43,7 @@
 <div id="message" class="notice hidden"></div>
 <section id="home" class="page show">
 <div id="birthdayHomePanel" class="birthday-card">
-  <div class="birthday-head"><div><small>🎂 Birthday Information</small><h2>誕生日のお知らせ</h2><p>選手・監督・コーチ・審判員の今日と近日の誕生日を表示します。</p></div><button class="light" onclick="showPage('birthdays');setTimeout(renderBirthdayCenter,0)">誕生日を登録・確認</button></div>
+  <div class="birthday-head"><div><small>🎂 Birthday Information</small><h2>誕生日のお知らせ</h2><p>選手・監督・コーチ・審判員の今日と近日の誕生日を表示します。</p></div><button class="light" onclick="showPage('birthdays');setTimeout(renderBirthdayCenter,0)">誕生日を確認</button></div>
   <div id="birthdayHomeContent" class="birthday-content"><span class="muted">誕生日情報を読み込み中です…</span></div>
 </div>
 <div id="stats" class="grid"></div><div class="card"><div class="section-title"><h3>最近の試合</h3><button class="light" onclick="exportAllCsv()">CSV出力</button></div><div id="recent"></div></div></section>
@@ -112,7 +112,7 @@
 <section id="ai" class="page">
   <div class="v182-ai-overview">
     <div>
-      <span>Ver.20.0.1 誕生日お知らせ版 AI分析強化</span>
+      <span>Ver.20.0.2 誕生日プライバシー版 AI分析強化</span>
       <h2>🤖 AI分析センター</h2>
       <p>試合・選手・動画記録をまとめて、コーチが判断しやすい形へ整理します。</p>
     </div>
@@ -236,7 +236,7 @@
 <section id="video" class="page">
   <div class="video181-hero">
     <div>
-      <span>古堅南FC AI Coach Ver.20.0.1 誕生日お知らせ版</span>
+      <span>古堅南FC AI Coach Ver.20.0.2 誕生日プライバシー版</span>
       <h2>🎥 AI動画分析</h2>
       <p>「動画を選ぶ → 記録する → AIでまとめる」の順番で使えます。</p>
     </div>
@@ -447,7 +447,7 @@
   <div class="video17-engine">
     <div class="video17-head">
       <div>
-        <span>古堅南FC AI Coach Ver.20.0.1 誕生日お知らせ版</span>
+        <span>古堅南FC AI Coach Ver.20.0.2 誕生日プライバシー版</span>
         <h3>🧠 AI Vision Engine</h3>
         <p>追跡候補を蓄積し、移動・保持・フォーメーション・ヒートマップを自動集計します。</p>
       </div>
@@ -702,7 +702,7 @@
 <section id="coach" class="page">
   <div class="coach11-hero">
     <div>
-      <span class="coach-version">古堅南FC AI Coach Ver.20.0.1 誕生日お知らせ版</span>
+      <span class="coach-version">古堅南FC AI Coach Ver.20.0.2 誕生日プライバシー版</span>
       <h2>AI分析・PWA・自動バックアップ統合版</h2>
       <p>迷わず、5分で、次の指導まで。必要な機能だけを順番に使えます。</p>
     </div>
@@ -1059,15 +1059,15 @@
 <div class="v20-launch-hero">
   <div>
     <span>古堅南FC AI Coach</span>
-    <h2>Ver.20.0.1 誕生日お知らせ版</h2>
+    <h2>Ver.20.0.2 誕生日プライバシー版</h2>
     <p>AI監督・試合分析・動画メモ・練習提案・バックアップを統合した新しい安定版です。</p>
   </div>
-  <div class="v20-build">BUILD 20.0.1-20260731</div>
+  <div class="v20-build">BUILD 20.0.2-20260731</div>
 </div>
 
   <div class="v19-hero">
     <div>
-      <span class="v19-badge">Ver.20.0.1 誕生日お知らせ版</span>
+      <span class="v19-badge">Ver.20.0.2 誕生日プライバシー版</span>
       <h2>🚀 AI統合コマンドセンター</h2>
       <p>チーム状況・試合・選手成長・AI接続・バックアップを1画面で確認できます。</p>
     </div>
@@ -1216,7 +1216,7 @@
 <section id="backup" class="page">
   <div class="v182-backup-hero">
     <div>
-      <span>Ver.20.0.1 誕生日お知らせ版</span>
+      <span>Ver.20.0.2 誕生日プライバシー版</span>
       <h2>🛡️ データ保護・PWA設定</h2>
       <p>自動保存、JSONバックアップ、復元、オフライン利用をまとめて管理します。</p>
     </div>
@@ -1359,9 +1359,9 @@
 <label>メモ（任意）</label><input id="birthdayMemo" placeholder="例：U-12担当">
 <div class="birthday-modal-actions"><button onclick="saveBirthdayEntry()">保存</button><button class="secondary" onclick="closeBirthdayEditor()">閉じる</button></div>
 </div></div>
-<link rel="stylesheet" href="./assets/css/birthday-v2001.css?build=20.0.1-20260731">
-<script src="./assets/js/app-v20.js?build=20.0.1-20260731"></script>
-<script src="./assets/js/birthday-v2001.js?build=20.0.1-20260731"></script>
+<link rel="stylesheet" href="./assets/css/birthday-v2001.css?build=20.0.2-20260731">
+<script src="./assets/js/app-v20.js?build=20.0.2-20260731"></script>
+<script src="./assets/js/birthday-v2001.js?build=20.0.2-20260731"></script>
 
 <script>
 (function(){
@@ -1381,8 +1381,8 @@
 </script>
 
 <div id="v1822CacheNotice" style="display:none;position:fixed;left:12px;right:12px;bottom:12px;z-index:99999;background:#0f172a;color:white;padding:12px 14px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.25);font-weight:800">
-Ver.20.0.1 誕生日お知らせ版の更新が必要です。
-<a href="./cache-reset.html?v=20.0.1-20260731" style="color:#7dd3fc;margin-left:8px">キャッシュを更新</a>
+Ver.20.0.2 誕生日プライバシー版の更新が必要です。
+<a href="./cache-reset.html?v=20.0.2-20260731" style="color:#7dd3fc;margin-left:8px">キャッシュを更新</a>
 </div>
-<div class="v20-fixed-badge">Ver.20.0.1 誕生日お知らせ版 / 20.0.1-20260731</div>
+<div class="v20-fixed-badge">Ver.20.0.2 誕生日プライバシー版 / 20.0.2-20260731</div>
 </body></html>

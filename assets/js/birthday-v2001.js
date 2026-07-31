@@ -26,19 +26,31 @@
   }
   function fmt(date){const p=String(date).split('-');return `${Number(p[1])}月${Number(p[2])}日`;}
   function upcomingEntries(limitDays=30){return merged().map(x=>({...x,...nextInfo(x.date)})).filter(x=>x.days<=limitDays).sort((a,b)=>a.days-b.days||a.name.localeCompare(b.name,'ja'));}
+  function isStaffMode(){return typeof isStaff==='function'&&isStaff();}
+  function setPublicPrivacy(staff){
+    const card=byId('birthdays')?.querySelector('.birthday-center');
+    const filter=card?.querySelector('.birthday-filter-row');
+    const table=card?.querySelector('.table');
+    if(filter)filter.classList.toggle('hidden',!staff);
+    if(table)table.classList.toggle('hidden',!staff);
+    const title=card?.querySelector('.section-title h2');
+    const desc=card?.querySelector('.section-title .muted');
+    if(title)title.textContent=staff?'🎂 誕生日管理':'🎂 近日の誕生日';
+    if(desc)desc.textContent=staff?'選手・監督・コーチ・審判員を登録し、ホーム画面にお知らせを表示します。':'プライバシー保護のため、30日以内の誕生日だけを表示しています。';
+  }
   function renderHome(){
-    const box=byId('birthdayHomeContent'); if(!box)return; const list=upcomingEntries(30); if(!list.length){box.innerHTML='<div class="birthday-empty">30日以内の誕生日登録はありません。</div>';return;}
+    const box=byId('birthdayHomeContent'); if(!box)return; const list=upcomingEntries(30).slice(0,3); if(!list.length){box.innerHTML='<div class="birthday-empty">30日以内の誕生日登録はありません。</div>';return;}
     const today=list.filter(x=>x.days===0); let html=today.length?`<div class="birthday-today-banner">🎉 本日の誕生日：${today.map(x=>safe(x.name)+'さん').join('、')}</div>`:'';
-    html+='<div class="birthday-grid">'+list.slice(0,8).map(x=>`<div class="birthday-person ${x.days===0?'today':''}"><strong>${safe(x.name)}</strong><span class="role">${safe(x.role)}${x.memo?'・'+safe(x.memo):''}</span><div class="date">${fmt(x.date)}</div><div class="days">${x.days===0?'🎂 今日です！':x.days===1?'明日です':`あと${x.days}日`}</div></div>`).join('')+'</div>';
+    html+='<div class="birthday-grid">'+list.map(x=>`<div class="birthday-person ${x.days===0?'today':''}"><strong>${safe(x.name)}</strong><span class="role">${safe(x.role)}${x.memo?'・'+safe(x.memo):''}</span><div class="date">${fmt(x.date)}</div><div class="days">${x.days===0?'🎂 今日です！':x.days===1?'明日です':`あと${x.days}日`}</div></div>`).join('')+'</div>';
     box.innerHTML=html;
   }
   window.renderBirthdayCenter=function(){
     birthdayEntries=merged(); renderHome(); const body=byId('birthdayBody'),up=byId('birthdayUpcoming'); if(!body||!up)return;
-    const staff=typeof isStaff==='function'&&isStaff(); byId('birthdayAddBtn')?.classList.toggle('hidden',!staff); byId('birthdayPermissionNotice')?.classList.toggle('hidden',staff);
+    const staff=isStaffMode(); setPublicPrivacy(staff); byId('birthdayAddBtn')?.classList.toggle('hidden',!staff); const notice=byId('birthdayPermissionNotice'); if(notice){notice.classList.toggle('hidden',staff); notice.textContent='プライバシー保護のため、閲覧モードでは30日以内の誕生日のみ表示します。全員の確認・登録・編集はコーチログイン後に利用できます。';}
     const role=byId('birthdayRoleFilter')?.value||'',q=(byId('birthdaySearch')?.value||'').trim().toLowerCase();
     const list=birthdayEntries.map(x=>({...x,...nextInfo(x.date)})).filter(x=>(!role||x.role===role)&&(!q||x.name.toLowerCase().includes(q))).sort((a,b)=>a.days-b.days||a.name.localeCompare(b.name,'ja'));
-    const near=list.filter(x=>x.days<=30).slice(0,8); up.innerHTML=near.length?'<div class="birthday-grid">'+near.map(x=>`<div class="birthday-person ${x.days===0?'today':''}"><strong>${safe(x.name)}</strong><span class="role">${safe(x.role)}</span><div class="date">${fmt(x.date)}</div><div class="days">${x.days===0?'🎂 今日':`あと${x.days}日`}</div></div>`).join('')+'</div>':'<div class="birthday-empty">30日以内の誕生日はありません。</div>';
-    body.innerHTML=list.map(x=>`<tr><td>${safe(x.name)}</td><td>${safe(x.role)}</td><td>${fmt(x.date)}</td><td>${x.days===0?'今日':x.days+'日'}</td><td>${staff&&x.source!=='players'?`<button class="light" onclick="openBirthdayEditor('${safe(x.id)}')">編集</button> <button class="danger" onclick="deleteBirthdayEntry('${safe(x.id)}')">削除</button>`:x.source==='players'?'選手データ連動':'閲覧のみ'}</td></tr>`).join('')||'<tr><td colspan="5" class="muted">登録がありません。</td></tr>';
+    const near=list.filter(x=>x.days<=30).slice(0,staff?8:3); up.innerHTML=near.length?'<div class="birthday-grid">'+near.map(x=>`<div class="birthday-person ${x.days===0?'today':''}"><strong>${safe(x.name)}</strong><span class="role">${safe(x.role)}</span><div class="date">${fmt(x.date)}</div><div class="days">${x.days===0?'🎂 今日':`あと${x.days}日`}</div></div>`).join('')+'</div>':'<div class="birthday-empty">30日以内の誕生日はありません。</div>';
+    body.innerHTML=staff?list.map(x=>`<tr><td>${safe(x.name)}</td><td>${safe(x.role)}</td><td>${fmt(x.date)}</td><td>${x.days===0?'今日':x.days+'日'}</td><td>${staff&&x.source!=='players'?`<button class="light" onclick="openBirthdayEditor('${safe(x.id)}')">編集</button> <button class="danger" onclick="deleteBirthdayEntry('${safe(x.id)}')">削除</button>`:x.source==='players'?'選手データ連動':'閲覧のみ'}</td></tr>`).join('')||'<tr><td colspan="5" class="muted">登録がありません。</td></tr>':' ';
   };
   window.openBirthdayEditor=function(id=''){
     if(!(typeof isStaff==='function'&&isStaff())){showMessage('コーチログイン後に登録できます。');return;}
