@@ -30,34 +30,78 @@ function showMessage(text,type='warn'){const e=$('message');e.textContent=text;e
 function showPage(id){document.querySelectorAll('.page').forEach(x=>x.classList.remove('show'));$(id).classList.add('show');if(id==='entry')renderRecordInputs();if(id==='analytics')setTimeout(renderAnalytics,0);if(id==='ai')setTimeout(testAiConnection,0);if(id==='reports')setTimeout(renderReportsPage,0);if(id==='video')setTimeout(renderVideoPage,0);if(id==='ver7')setTimeout(renderV7Page,0);if(id==='backup')setTimeout(v182RenderBackupCenter,0);if(id==='ver19')setTimeout(()=>{v19Render();v191Render();},0);if(id==='ai')setTimeout(v182RefreshAiSummary,100)}
 function isStaff(){return !!(profile&&profile.active&&['admin','coach'].includes(profile.role))}
 function esc(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
-async function init(){const c=window.FURUGEN_CONFIG;if(!c||!c.SUPABASE_URL||!c.SUPABASE_ANON_KEY){showMessage('config.jsの設定がありません。');return}sb=supabase.createClient(c.SUPABASE_URL,c.SUPABASE_ANON_KEY);const x=await sb.auth.getSession();session=x.data.session;await loadProfile();await loadAll();setupRealtime();sb.auth.onAuthStateChange(async(_,s)=>{session=s;await loadProfile();await loadAll()});if('serviceWorker' in navigator)(async()=>{
-  try{
-    const regs=await navigator.serviceWorker.getRegistrations();
-    for(const reg of regs){ await reg.unregister(); }
-    const keys=await caches.keys();
-    await Promise.all(keys.map(key=>caches.delete(key)));
-    const reg=await await reg.update();
-  }catch(e){ console.warn('PWA cache reset failed',e); }
-})();setTimeout(v182Init,200)}
+async function init(){const c=window.FURUGEN_CONFIG;if(!c||!c.SUPABASE_URL||!c.SUPABASE_ANON_KEY){showMessage('config.jsの設定がありません。');return}sb=supabase.createClient(c.SUPABASE_URL,c.SUPABASE_ANON_KEY);const x=await sb.auth.getSession();session=x.data.session;await loadProfile();await loadAll();setupRealtime();sb.auth.onAuthStateChange(async(_,s)=>{session=s;await loadProfile();await loadAll()});setTimeout(v182Init,200)}
 async function loadProfile(){profile=null;if(session){const r=await sb.from('profiles').select('*').eq('id',session.user.id).maybeSingle();profile=r.data}const staff=isStaff();$('mode').textContent=staff?`${session.user.email}（${profile.role==='admin'?'管理者':'コーチ'}）`:'保護者閲覧モード';$('loginOut').classList.toggle('hidden',!!session);$('loginIn').classList.toggle('hidden',!session);$('entryForm').classList.toggle('hidden',!staff);$('needLogin').classList.toggle('hidden',staff);$('addPlayerBtn').classList.toggle('hidden',!staff);if(session)$('loginWho').textContent=`${session.user.email} / 権限：${profile?.role||'未設定'}`}
+async function v2013Query(label, queryFactory, retries=2){
+  let lastError=null;
+  for(let i=0;i<=retries;i++){
+    try{
+      const result=await queryFactory();
+      if(!result.error)return {data:result.data||[],error:null};
+      lastError=result.error;
+    }catch(e){lastError=e}
+    if(i<retries)await new Promise(r=>setTimeout(r,700*(i+1)));
+  }
+  console.error(label,lastError);
+  return {data:null,error:lastError};
+}
+function v2013SetStatus(text,type='loading'){
+  const el=document.getElementById('dataRecoveryStatus');
+  if(!el)return;
+  el.textContent=text;
+  el.className='data-recovery-status '+type;
+}
 async function loadAll(){
- const [p,m,r,t,rp,vn,v7]=await Promise.all([
-  sb.from('players').select('*').order('grade').order('name'),
-  sb.from('matches').select('*').order('match_date',{ascending:false}),
-  sb.from('records').select('*'),
-  sb.from('team_settings').select('*'),
-  sb.from('ai_reports').select('*').order('created_at',{ascending:false}).limit(100),
-  sb.from('video_notes').select('*').order('created_at',{ascending:false}).limit(100),
-  sb.from('ai_plans').select('*').order('created_at',{ascending:false}).limit(100)
- ]);
- if(p.error||m.error||r.error){showMessage('データ取得エラー：'+(p.error||m.error||r.error).message);return}
- players=p.data||[];matches=m.data||[];records=r.data||[];
- reports=rp.error?[]:(rp.data||[]);
- videoNotes=vn.error?[]:(vn.data||[]);
- v7Plans=v7.error?JSON.parse(localStorage.getItem('furugenV7Plans')||'[]'):(v7.data||[]);
- playerPrivate=[];playerGrowthRecords=[];playerMedicalRecords=[];playerSkillEvaluations=[];
- teamSettings={};if(!t.error)(t.data||[]).forEach(x=>teamSettings[x.key]=x.value);
- applyTeamSettings();refreshFilters();renderAll()
+  v2013SetStatus('Supabaseから選手・試合データを読み込んでいます…','loading');
+
+  const p=await v2013Query('players',()=>sb.from('players').select('*').order('grade').order('name'));
+  const m=await v2013Query('matches',()=>sb.from('matches').select('*').order('match_date',{ascending:false}));
+  const r=await v2013Query('records',()=>sb.from('records').select('*'));
+  const t=await v2013Query('team_settings',()=>sb.from('team_settings').select('*'));
+  const rp=await v2013Query('ai_reports',()=>sb.from('ai_reports').select('*').order('created_at',{ascending:false}).limit(100),1);
+  const vn=await v2013Query('video_notes',()=>sb.from('video_notes').select('*').order('created_at',{ascending:false}).limit(100),1);
+  const v7=await v2013Query('ai_plans',()=>sb.from('ai_plans').select('*').order('created_at',{ascending:false}).limit(100),1);
+
+  const coreErrors=[p,m,r].filter(x=>x.error);
+  if(coreErrors.length){
+    const msg=coreErrors.map(x=>x.error?.message||String(x.error)).join(' / ');
+    v2013SetStatus('データ取得に失敗しました。「データ再読込」を押してください。','error');
+    showMessage('データ取得エラー：'+msg);
+    return;
+  }
+
+  players=p.data||[];
+  matches=m.data||[];
+  records=r.data||[];
+  reports=rp.error?reports:(rp.data||[]);
+  videoNotes=vn.error?videoNotes:(vn.data||[]);
+  v7Plans=v7.error?(v7Plans.length?v7Plans:JSON.parse(localStorage.getItem('furugenV7Plans')||'[]')):(v7.data||[]);
+
+  if(!t.error){
+    teamSettings={};
+    (t.data||[]).forEach(x=>teamSettings[x.key]=x.value);
+  }
+
+  applyTeamSettings();
+  refreshFilters();
+  renderAll();
+  renderBirthdayNotice();
+  renderStaffBirthdayList();
+
+  localStorage.setItem('furugen_last_data_snapshot',JSON.stringify({
+    saved_at:new Date().toISOString(),
+    players_count:players.length,
+    matches_count:matches.length,
+    records_count:records.length
+  }));
+
+  v2013SetStatus(`接続正常：選手 ${players.length}名・試合 ${matches.length}件を読み込みました。`,'ok');
+}
+async function v2013ReloadData(){
+  const btn=document.getElementById('dataReloadBtn');
+  if(btn){btn.disabled=true;btn.textContent='再読込中…'}
+  try{await loadProfile();await loadAll()}
+  finally{if(btn){btn.disabled=false;btn.textContent='🔄 データ再読込'}}
 }
 function setupRealtime(){sb.channel('furugen-live').on('postgres_changes',{event:'*',schema:'public',table:'players'},loadAll).on('postgres_changes',{event:'*',schema:'public',table:'matches'},loadAll).on('postgres_changes',{event:'*',schema:'public',table:'records'},loadAll).on('postgres_changes',{event:'*',schema:'public',table:'team_settings'},loadAll).on('postgres_changes',{event:'*',schema:'public',table:'ai_reports'},loadAll).on('postgres_changes',{event:'*',schema:'public',table:'video_notes'},loadAll).on('postgres_changes',{event:'*',schema:'public',table:'ai_plans'},loadAll).on('postgres_changes',{event:'*',schema:'public',table:'player_private'},loadAll).subscribe()}
 function totals(p){const rr=records.filter(x=>x.player_id===p.id);return{apps:(p.past_apps||0)+rr.filter(x=>x.played).length,minutes:rr.reduce((a,x)=>a+(x.minutes||0),0),goals:(p.past_goals||0)+rr.reduce((a,x)=>a+(x.goals||0),0),assists:(p.past_assists||0)+rr.reduce((a,x)=>a+(x.assists||0),0),yellow:(p.past_yellow||0)+rr.reduce((a,x)=>a+(x.yellow||0),0),red:(p.past_red||0)+rr.reduce((a,x)=>a+(x.red||0),0),mvp:rr.filter(x=>x.mvp).length}}
@@ -795,7 +839,7 @@ ${rank||'未登録'}
  coachSendPrompt('season',prompt)
 }
 
-function renderAll(){ video171Bind(); video17Load();
+function renderAll(){setTimeout(()=>{renderBirthdayNotice();renderStaffBirthdayList();},0); video171Bind(); video17Load();
  const v16m=$('video16MatchSelect');
  if(v16m){
   const cur=v16m.value;
@@ -1566,7 +1610,23 @@ function defaultAvatar(){return 'data:image/svg+xml;charset=UTF-8,'+encodeURICom
 async function imageToDataUrl(file,maxSize=480,quality=.78){return new Promise((resolve,reject)=>{const img=new Image(),url=URL.createObjectURL(file);img.onload=()=>{let w=img.width,h=img.height;if(Math.max(w,h)>maxSize){const k=maxSize/Math.max(w,h);w=Math.round(w*k);h=Math.round(h*k)}const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);URL.revokeObjectURL(url);resolve(c.toDataURL('image/jpeg',quality))};img.onerror=reject;img.src=url})}
 async function previewPlayerPhoto(input){const f=input.files?.[0];if(!f)return;try{const data=await imageToDataUrl(f,420,.76);$('editPhotoData').value=data;$('playerPhotoPreview').src=data}catch(e){showMessage('写真を読み込めませんでした。')}}
 async function previewEmblem(input){const f=input.files?.[0];if(!f)return;try{$('emblemPreview').src=await imageToDataUrl(f,360,.82)}catch(e){showMessage('画像を読み込めませんでした。')}}
-function applyTeamSettings(){const name=teamSettings.team_name||'古堅南FC',emblem=teamSettings.emblem_url||'';$('teamName').value=name;$('emblemPreview').src=emblem||defaultAvatar();$('headerEmblem').src=emblem||'';$('headerEmblem').classList.toggle('hidden',!emblem);document.querySelector('.title').lastChild && null;document.title=name+' Ver.5';$('settingsNav').classList.toggle('hidden',!isStaff())}
+function applyTeamSettings(){
+  const savedName=(teamSettings.team_name||'古堅南FC').trim();
+  const baseName=savedName
+    .replace(/\s*AI\s*Coach\s*Ver\.?\s*[0-9.]+.*$/i,'')
+    .replace(/\s*Ver\.?\s*[0-9.]+.*$/i,'')
+    .trim()||'古堅南FC';
+
+  const visibleTitle=baseName+' AI Coach Ver.20.1';
+  $('teamBrand').textContent=visibleTitle;
+  document.title=visibleTitle;
+
+  const emblem=teamSettings.emblem_url||'';
+  $('headerEmblem').src=emblem;
+  $('headerEmblem').classList.toggle('hidden',!emblem);
+
+  $('settingsNav').classList.toggle('hidden',!isStaff());
+}
 async function saveTeamSettings(){if(!isStaff())return;const name=$('teamName').value.trim()||'古堅南FC',emblem=$('emblemPreview').src.startsWith('data:')?$('emblemPreview').src:(teamSettings.emblem_url||'');const rows=[{key:'team_name',value:name,updated_at:new Date().toISOString()},{key:'emblem_url',value:emblem,updated_at:new Date().toISOString()}];const r=await sb.from('team_settings').upsert(rows);if(r.error)showMessage(r.error.message);else showMessage('チーム設定を保存しました。','ok')}
 function analysisMatches(){const season=$('analysisSeason').value,comp=$('analysisCompetition').value,from=$('analysisFrom').value,to=$('analysisTo').value;return matches.filter(m=>(!season||String(m.season)===season)&&(!comp||(m.competition||'通常試合')===comp)&&(!from||m.match_date>=from)&&(!to||m.match_date<=to))}
 function resetAnalysisFilters(){$('analysisSeason').value='';$('analysisCompetition').value='';$('analysisFrom').value='';$('analysisTo').value='';renderAnalytics()}
@@ -2363,7 +2423,7 @@ async function deleteV7Plan(id){if(!confirm('このAI案を削除しますか？
 
 
 /* =========================================================
-   Ver.19.1 完全版 AI分析・PWA・自動バックアップ
+   Ver.20.1 完全完成版 AI分析・PWA・自動バックアップ
 ========================================================= */
 const V182_BACKUP_KEY='furugen_v182_auto_backups';
 const V182_AUTO_KEY='furugen_v182_auto_backup_enabled';
@@ -2609,7 +2669,7 @@ function v182RefreshAiSummary(){
 
 
 /* =========================================================
-   Ver.19.1 完全版 AI統合コマンドセンター
+   Ver.20.1 完全完成版 AI統合コマンドセンター
    ========================================================= */
 function v19SafeNum(v){const n=Number(v);return Number.isFinite(n)?n:0}
 function v19ActivePlayers(){return (players||[]).filter(p=>!p.status||p.status==='現役')}
@@ -2712,7 +2772,7 @@ function v19DownloadSnapshot(){
 
 
 /* =========================================================
-   Ver.19.1 完全版 AI監督ダッシュボード
+   Ver.20.1 完全完成版 AI監督ダッシュボード
    ========================================================= */
 let v191SpotlightPlayerId = null;
 
@@ -2822,7 +2882,7 @@ function v191BuildTraining(){
 function v191GenerateDailyPlan(){
   const f=v191Forecast(),c=v191ConditionData(),spot=v191Spotlight(),st=v19TeamStats();
   const report=[
-    '【古堅南FC Ver.19.1 完全版 本日のAI監督レポート】',
+    '【古堅南FC Ver.20.1 完全完成版 本日のAI監督レポート】',
     `チームコンディション：${c.label}（${c.score}点）`,
     `次戦勝率予測：${f.value}%`,
     `予測理由：${f.reason}`,
@@ -2873,4 +2933,141 @@ function v191SendTrainingToAi(){
   showPage('ai');
   setAiMode('training',document.querySelector('[data-mode="training"]'));
   setAiPrompt(`小学生サッカーチーム向けに、75分の練習メニューを詳しく作成してください。\nチーム状況：${v19BuildSummary()}\n重点：${v19TeamStats().diff<0?'守備の切り替えと連係':v19TeamStats().rate<50?'決定機の質とフィニッシュ':'判断スピードと複数人の関わり'}\n安全面、声かけ、難易度調整も含めてください。`);
+}
+
+
+/* Ver.20 stable boot */
+window.V20_BUILD = "20.1.3-20260731";
+async function v20SafeBoot(){
+  try {
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      for (const r of regs) {
+        if (!String(r.active?.scriptURL || '').includes('sw-v201.js')) await r.unregister();
+      }
+      await navigator.serviceWorker.register('./sw-v201.js?build=20.1.3-20260731', {scope:'./'});
+    }
+    localStorage.setItem('furugen_v20_build','20.1.3-20260731');
+  } catch(e) { console.warn('V20 boot:', e); }
+}
+window.addEventListener('load', v20SafeBoot);
+
+
+/* =========================================================
+   Ver.20.1 誕生日お知らせ機能
+   ========================================================= */
+function parseStaffBirthdays(){
+  try{
+    const raw=teamSettings.staff_birthdays||'[]';
+    return Array.isArray(raw)?raw:JSON.parse(raw||'[]');
+  }catch(e){return []}
+}
+function birthdayMonthDay(dateText){
+  if(!dateText)return null;
+  const d=new Date(dateText+'T00:00:00');
+  if(Number.isNaN(d.getTime()))return null;
+  return {month:d.getMonth()+1,day:d.getDate(),year:d.getFullYear()};
+}
+function birthdayDistance(dateText){
+  const md=birthdayMonthDay(dateText);if(!md)return 999;
+  const now=new Date(),today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  let next=new Date(now.getFullYear(),md.month-1,md.day);
+  if(next<today)next=new Date(now.getFullYear()+1,md.month-1,md.day);
+  return Math.round((next-today)/86400000);
+}
+function birthdayAge(dateText){
+  const md=birthdayMonthDay(dateText);if(!md)return '';
+  const now=new Date();let age=now.getFullYear()-md.year;
+  const birthdayPassed=(now.getMonth()+1>md.month)||((now.getMonth()+1===md.month)&&now.getDate()>=md.day);
+  if(!birthdayPassed)age--;
+  return age>=0?age:'';
+}
+function birthdayPeople(){
+  const playerRows=(players||[]).filter(p=>p.birth_date&&p.status!=='退団').map(p=>({
+    id:'player-'+p.id,name:p.name,role:'選手',birth_date:p.birth_date,grade:p.grade||'',photo:p.photo_url||''
+  }));
+  const staffRows=parseStaffBirthdays().map((s,i)=>({
+    id:s.id||('staff-'+i),name:s.name,role:s.role||'スタッフ',birth_date:s.birth_date,grade:'',photo:''
+  }));
+  return [...staffRows,...playerRows].filter(x=>x.birth_date).map(x=>({...x,days:birthdayDistance(x.birth_date)})).sort((a,b)=>a.days-b.days);
+}
+function birthdayMessage(person){
+  if(person.days===0)return `${person.name}さん、お誕生日おめでとうございます！🎉`;
+  if(person.days===1)return `明日は${person.name}さんの誕生日です。`;
+  return `あと${person.days}日で${person.name}さんの誕生日です。`;
+}
+function renderBirthdayNotice(){
+  const todayBox=$('birthdayToday'),upcomingBox=$('birthdayUpcoming');
+  if(!todayBox||!upcomingBox)return;
+  const people=birthdayPeople();
+  const today=people.filter(x=>x.days===0);
+  const upcoming=people.filter(x=>x.days>0&&x.days<=30).slice(0,12);
+
+  if(today.length){
+    todayBox.innerHTML=today.map(p=>`
+      <article class="birthday-main-alert">
+        <div class="birthday-icon">🎂</div>
+        <div>
+          <small>本日のお誕生日</small>
+          <h4>${esc(p.name)}さん</h4>
+          <p>${esc(p.role)}${p.grade?'・'+esc(p.grade):''}　お誕生日おめでとうございます！🎉</p>
+        </div>
+      </article>`).join('');
+  }else{
+    todayBox.innerHTML='<div class="birthday-empty">本日のお誕生日登録はありません。</div>';
+  }
+
+  if(upcoming.length){
+    upcomingBox.innerHTML='<h4>近日のお誕生日</h4><div class="birthday-upcoming-grid">'+upcoming.map(p=>{
+      const md=birthdayMonthDay(p.birth_date);
+      return `<article>
+        <div class="birthday-count">${p.days}日後</div>
+        <strong>${esc(p.name)}</strong>
+        <span>${esc(p.role)}${p.grade?'・'+esc(p.grade):''}</span>
+        <small>${md.month}月${md.day}日</small>
+      </article>`;
+    }).join('')+'</div>';
+  }else{
+    upcomingBox.innerHTML='<div class="birthday-empty">30日以内のお誕生日登録はありません。</div>';
+  }
+}
+function renderStaffBirthdayList(){
+  const root=$('staffBirthdayList');if(!root)return;
+  const rows=parseStaffBirthdays();
+  if(!rows.length){
+    root.innerHTML='<div class="birthday-empty">監督・コーチ・審判員の誕生日はまだ登録されていません。</div>';
+    return;
+  }
+  root.innerHTML=rows.sort((a,b)=>birthdayDistance(a.birth_date)-birthdayDistance(b.birth_date)).map(s=>{
+    const md=birthdayMonthDay(s.birth_date);
+    return `<div class="staff-birthday-row">
+      <div><strong>${esc(s.name)}</strong><span>${esc(s.role||'スタッフ')}</span></div>
+      <b>${md?md.month+'月'+md.day+'日':'未設定'}</b>
+      <button class="danger" onclick="deleteStaffBirthday('${esc(s.id)}')">削除</button>
+    </div>`;
+  }).join('');
+}
+async function addStaffBirthday(){
+  if(!isStaff())return;
+  const name=$('staffBirthdayName')?.value.trim();
+  const role=$('staffBirthdayRole')?.value||'スタッフ';
+  const birth_date=$('staffBirthdayDate')?.value;
+  if(!name||!birth_date){showMessage('名前と誕生日を入力してください。');return}
+  const rows=parseStaffBirthdays();
+  rows.push({id:'S'+Date.now().toString(36),name,role,birth_date});
+  const r=await sb.from('team_settings').upsert({key:'staff_birthdays',value:JSON.stringify(rows),updated_at:new Date().toISOString()});
+  if(r.error){showMessage(r.error.message);return}
+  teamSettings.staff_birthdays=JSON.stringify(rows);
+  $('staffBirthdayName').value='';$('staffBirthdayDate').value='';
+  renderStaffBirthdayList();renderBirthdayNotice();
+  showMessage('スタッフの誕生日を保存しました。','ok');
+}
+async function deleteStaffBirthday(id){
+  if(!isStaff())return;
+  const rows=parseStaffBirthdays().filter(x=>String(x.id)!==String(id));
+  const r=await sb.from('team_settings').upsert({key:'staff_birthdays',value:JSON.stringify(rows),updated_at:new Date().toISOString()});
+  if(r.error){showMessage(r.error.message);return}
+  teamSettings.staff_birthdays=JSON.stringify(rows);
+  renderStaffBirthdayList();renderBirthdayNotice();
+  showMessage('誕生日登録を削除しました。','ok');
 }
