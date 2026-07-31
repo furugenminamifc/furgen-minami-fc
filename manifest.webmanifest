@@ -1,8 +1,8 @@
 {
-  "name": "古堅南FC AI Coach Ver.20.1 完全完成版",
-  "short_name": "古堅南FC 20.1",
-  "description": "監督・コーチ・選手の誕生日お知らせ機能を搭載した完全完成版",
-  "start_url": "./index.html?build=20.1.0-20260731&source=pwa",
+  "name": "古堅南FC AI Coach Ver.20.0 完全版",
+  "short_name": "古堅南FC Ver20",
+  "description": "古堅南FC AI Coach Ver.20.0 完全版",
+  "start_url": "./index.html?build=20.0.0-20260731&source=pwa",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
@@ -28,5 +28,5 @@
       "purpose": "any maskable"
     }
   ],
-  "id": "./?app=furugen-v201-20.1.0-20260731"
+  "id": "./?app=furugen-v20-20.0.0-20260731"
 }
