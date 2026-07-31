@@ -7,7 +7,7 @@
 <meta http-equiv="Expires" content="0">
 <script>
 (function(){
-  window.__FURUGEN_BUILD__="20.1.3-20260731";
+  window.__FURUGEN_BUILD__="20.1.1-20260731";
   try{
     if('serviceWorker' in navigator){
       navigator.serviceWorker.getRegistrations().then(function(rs){
@@ -27,24 +27,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0284c7">
-<link rel="manifest" href="./manifest.webmanifest?build=20.1.3-20260731">
+<link rel="manifest" href="./manifest.webmanifest?build=20.1.1-20260731">
 <title>古堅南FC AI Coach Ver.20.1 完全完成版</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<link rel="stylesheet" href="./assets/css/app-v2013.css?build=20.1.3-20260731">
+<link rel="stylesheet" href="./assets/css/app-v201.css?build=20.1.1-20260731">
 </head>
 <body>
 <header><div class="title"><span id="teamBrand">⚽ 古堅南FC AI Coach Ver.20.1</span></div><div id="mode" class="subtitle">保護者閲覧モード</div></header>
 <nav>
 <button onclick="showPage('home')">ホーム</button><button onclick="showPage('players')">選手</button><button onclick="showPage('matches')">試合</button><button onclick="showPage('entry')">試合入力</button><button onclick="showPage('ranking')">ランキング</button><button onclick="showPage('analytics')">試合分析</button><button onclick="showPage('reports')">📄 レポート</button><button onclick="showPage('video')">🎥 動画メモ</button><button onclick="showPage('ai')">🤖 AI</button><button onclick="showPage('coach')">🧠 AI Coach</button><button onclick="showPage('ver7')">🚀 Ver.7 AI分析</button><button onclick="showPage('ver19')">🚀 Ver.20</button><button onclick="showPage('backup')">🛡️ データ保護</button><button id="settingsNav" class="hidden" onclick="showPage('settings')">チーム設定</button><button onclick="showPage('login')">コーチログイン</button>
 </nav>
-
-<div class="data-recovery-bar">
-  <span id="dataRecoveryStatus" class="data-recovery-status loading">データ接続を確認しています…</span>
-  <button id="dataReloadBtn" type="button" onclick="v2013ReloadData()">🔄 データ再読込</button>
-</div>
-
 <main>
 <div id="message" class="notice hidden"></div>
 <section id="home" class="page show">
@@ -53,9 +47,9 @@
     <div>
       <span class="birthday-eyebrow">🎂 Birthday Information</span>
       <h3>誕生日のお知らせ</h3>
-      <p>監督・コーチ・審判員・選手の今日と近日の誕生日を表示します。</p>
+      <p>監督・コーチ・選手の今日と近日の誕生日を表示します。</p>
     </div>
-    <button class="light" onclick="showPage('settings')">スタッフ・審判員誕生日を設定</button>
+    <button class="light" onclick="showPage('settings')">スタッフ誕生日を設定</button>
   </div>
   <div id="birthdayToday" class="birthday-today"></div>
   <div id="birthdayUpcoming" class="birthday-upcoming"></div>
@@ -705,7 +699,7 @@
 <div class="card birthday-settings-card">
   <div class="section-title">
     <div>
-      <h3>🎂 監督・コーチ・審判員の誕生日設定</h3>
+      <h3>🎂 監督・コーチの誕生日設定</h3>
       <p class="muted">登録内容はSupabaseのチーム設定に保存され、全端末へ同期します。</p>
     </div>
   </div>
@@ -713,7 +707,7 @@
     <div class="field"><label>名前</label><input id="staffBirthdayName" placeholder="例：儀間 隼人"></div>
     <div class="field"><label>役職</label>
       <select id="staffBirthdayRole">
-        <option>監督</option><option>コーチ</option><option>審判員</option><option>代表</option><option>スタッフ</option>
+        <option>監督</option><option>コーチ</option><option>代表</option><option>スタッフ</option>
       </select>
     </div>
     <div class="field"><label>誕生日</label><input id="staffBirthdayDate" type="date"></div>
@@ -1087,7 +1081,7 @@
     <h2>Ver.20.1 完全完成版</h2>
     <p>AI監督・試合分析・動画メモ・練習提案・バックアップを統合した新しい安定版です。</p>
   </div>
-  <div class="v20-build">BUILD 20.1.3-20260731</div>
+  <div class="v20-build">BUILD 20.1.1-20260731</div>
 </div>
 
   <div class="v19-hero">
@@ -1375,7 +1369,7 @@
 <div class="muted">MacのDockerで使う場合は https://furugen-minami-ai.onrender.com。iPhoneから使う場合は、後でHTTPS公開したAIサーバーURLが必要です。</div><br>
 <label>チーム向け補足指示（任意）</label><textarea id="aiTeamInstruction" placeholder="例：小学生に伝わる言葉を使い、安全を最優先にする"></textarea><br>
 <button onclick="saveAiSettings()">保存</button> <button class="secondary" onclick="closeAiSettings()">閉じる</button></div></div>
-<script src="./assets/js/app-v2013.js?build=20.1.3-20260731"></script>
+<script src="./assets/js/app-v2011.js?build=20.1.1-20260731"></script>
 
 <script>
 (function(){
@@ -1396,7 +1390,7 @@
 
 <div id="v1822CacheNotice" style="display:none;position:fixed;left:12px;right:12px;bottom:12px;z-index:99999;background:#0f172a;color:white;padding:12px 14px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.25);font-weight:800">
 Ver.20.1 完全完成版の更新が必要です。
-<a href="./cache-reset.html?v=20.1.3-20260731" style="color:#7dd3fc;margin-left:8px">キャッシュを更新</a>
+<a href="./cache-reset.html?v=20.1.1-20260731" style="color:#7dd3fc;margin-left:8px">キャッシュを更新</a>
 </div>
-<div class="v20-fixed-badge">Ver.20.1 完全完成版 / 20.1.3-20260731</div>
+<div class="v20-fixed-badge">Ver.20.1 完全完成版 / 20.1.1-20260731</div>
 </body></html>
