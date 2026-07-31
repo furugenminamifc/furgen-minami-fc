@@ -1,8 +1,8 @@
 {
-  "name": "古堅南FC AI Coach Ver.19.1 完全版",
-  "short_name": "古堅南FC 19.1",
-  "description": "古堅南FC AI Coach Ver.19.1 AI監督ダッシュボード",
-  "start_url": "./ver191-complete.html?build=191-final-20260731",
+  "name": "古堅南FC AI Coach Ver.20.0 完全版",
+  "short_name": "古堅南FC Ver20",
+  "description": "古堅南FC AI Coach Ver.20.0 完全版",
+  "start_url": "./index.html?build=20.0.0-20260731&source=pwa",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
@@ -28,5 +28,5 @@
       "purpose": "any maskable"
     }
   ],
-  "id": "./ver191-complete.html?app=191-final-20260731"
+  "id": "./?app=furugen-v20-20.0.0-20260731"
 }
