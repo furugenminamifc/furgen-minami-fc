@@ -6,10 +6,10 @@ const detailCache=new Map();
 const DETAIL_CACHE_MS=5*60*1000;
 const $=id=>document.getElementById(id);
 function showMessage(text,type='warn'){const e=$('message');e.textContent=text;e.className=(type==='ok'?'notice success':'notice');e.classList.remove('hidden');setTimeout(()=>e.classList.add('hidden'),5000)}
-function showPage(id){document.querySelectorAll('.page').forEach(x=>x.classList.remove('show'));$(id).classList.add('show');if(id==='entry')renderRecordInputs();if(id==='analytics')setTimeout(renderAnalytics,0);if(id==='ai')setTimeout(testAiConnection,0);if(id==='reports')setTimeout(renderReportsPage,0);if(id==='video')setTimeout(renderVideoPage,0);if(id==='ver7')setTimeout(renderV7Page,0)}
+function showPage(id){document.querySelectorAll('.page').forEach(x=>x.classList.remove('show'));$(id).classList.add('show');if(id==='entry')renderRecordInputs();if(id==='analytics')setTimeout(renderAnalytics,0);if(id==='ai')setTimeout(testAiConnection,0);if(id==='reports')setTimeout(renderReportsPage,0);if(id==='video')setTimeout(renderVideoPage,0);if(id==='ver7')setTimeout(renderV7Page,0);if(id==='backup')setTimeout(v182RenderBackupCenter,0);if(id==='ai')setTimeout(v182RefreshAiSummary,100)}
 function isStaff(){return !!(profile&&profile.active&&['admin','coach'].includes(profile.role))}
 function esc(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
-async function init(){const c=window.FURUGEN_CONFIG;if(!c||!c.SUPABASE_URL||!c.SUPABASE_ANON_KEY){showMessage('config.jsの設定がありません。');return}sb=supabase.createClient(c.SUPABASE_URL,c.SUPABASE_ANON_KEY);const x=await sb.auth.getSession();session=x.data.session;await loadProfile();await loadAll();setupRealtime();sb.auth.onAuthStateChange(async(_,s)=>{session=s;await loadProfile();await loadAll()});if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{})}
+async function init(){const c=window.FURUGEN_CONFIG;if(!c||!c.SUPABASE_URL||!c.SUPABASE_ANON_KEY){showMessage('config.jsの設定がありません。');return}sb=supabase.createClient(c.SUPABASE_URL,c.SUPABASE_ANON_KEY);const x=await sb.auth.getSession();session=x.data.session;await loadProfile();await loadAll();setupRealtime();sb.auth.onAuthStateChange(async(_,s)=>{session=s;await loadProfile();await loadAll()});if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});setTimeout(v182Init,200)}
 async function loadProfile(){profile=null;if(session){const r=await sb.from('profiles').select('*').eq('id',session.user.id).maybeSingle();profile=r.data}const staff=isStaff();$('mode').textContent=staff?`${session.user.email}（${profile.role==='admin'?'管理者':'コーチ'}）`:'保護者閲覧モード';$('loginOut').classList.toggle('hidden',!!session);$('loginIn').classList.toggle('hidden',!session);$('entryForm').classList.toggle('hidden',!staff);$('needLogin').classList.toggle('hidden',staff);$('addPlayerBtn').classList.toggle('hidden',!staff);if(session)$('loginWho').textContent=`${session.user.email} / 権限：${profile?.role||'未設定'}`}
 async function loadAll(){
  const [p,m,r,t,rp,vn,v7]=await Promise.all([
@@ -2331,3 +2331,249 @@ function v7TypeLabel(t){return V7_FEATURES[t]?.title||t}
 function renderV7History(){const box=$('v7History');if(!box)return;box.innerHTML=v7Plans.length?v7Plans.map(x=>`<div class="saved-report"><div><b>${esc(x.title||v7TypeLabel(x.plan_type))}</b><div class="muted">${esc(String(x.created_at||'').slice(0,16).replace('T',' '))}</div></div><details><summary>内容を見る</summary><div class="report-text">${esc(x.content||'')}</div></details><div class="ai-actions"><button class="light" onclick="loadV7Plan('${x.id}')">編集欄へ</button>${isStaff()&&!String(x.id).startsWith('local-')?`<button class="danger" onclick="deleteV7Plan('${x.id}')">削除</button>`:''}</div></div>`).join(''):'<div class="muted">保存履歴はありません。</div>'}
 function loadV7Plan(id){const x=v7Plans.find(y=>String(y.id)===String(id));if(!x)return;v7Feature=x.plan_type||'lineup';const btn=document.querySelector(`[data-v7="${v7Feature}"]`);setV7Feature(v7Feature,btn);$('v7Output').value=x.content||'';showPage('ver7')}
 async function deleteV7Plan(id){if(!confirm('このAI案を削除しますか？'))return;const r=await sb.from('ai_plans').delete().eq('id',id);if(r.error)showMessage(r.error.message);else await loadAll()}
+
+
+/* =========================================================
+   Ver.18.2 AI分析・PWA・自動バックアップ
+========================================================= */
+const V182_BACKUP_KEY='furugen_v182_auto_backups';
+const V182_AUTO_KEY='furugen_v182_auto_backup_enabled';
+const V182_DIRTY_KEY='furugen_v182_unsaved_changes';
+let v182BackupTimer=null;
+let v182DeferredPrompt=null;
+let v182Dirty=false;
+
+function v182Init(){
+  window.addEventListener('online',v182UpdateNetworkStatus);
+  window.addEventListener('offline',v182UpdateNetworkStatus);
+  window.addEventListener('beforeinstallprompt',e=>{
+    e.preventDefault();
+    v182DeferredPrompt=e;
+    const b=$('v182InstallButton');if(b)b.classList.remove('hidden');
+    v182UpdatePwaStatus();
+  });
+  window.addEventListener('appinstalled',()=>{
+    v182DeferredPrompt=null;
+    showMessage('古堅南FC AI Coachをインストールしました。','ok');
+    v182UpdatePwaStatus();
+  });
+  document.addEventListener('input',v182MarkDirty,true);
+  document.addEventListener('change',v182MarkDirty,true);
+  window.addEventListener('beforeunload',e=>{
+    if(v182Dirty){
+      e.preventDefault();
+      e.returnValue='';
+    }
+  });
+  const enabled=localStorage.getItem(V182_AUTO_KEY)!=='false';
+  const toggle=$('v182AutoBackupToggle');if(toggle)toggle.checked=enabled;
+  if(enabled)v182StartAutoBackup();
+  v182UpdateNetworkStatus();
+  v182UpdatePwaStatus();
+  v182RefreshAiSummary();
+  v182RenderBackupCenter();
+}
+
+function v182MarkDirty(e){
+  if(e && e.target && e.target.closest && e.target.closest('#backup'))return;
+  v182Dirty=true;
+  sessionStorage.setItem(V182_DIRTY_KEY,'1');
+}
+
+function v182CollectLocalData(){
+  const data={};
+  for(let i=0;i<localStorage.length;i++){
+    const key=localStorage.key(i);
+    if(!key || key===V182_BACKUP_KEY)continue;
+    data[key]=localStorage.getItem(key);
+  }
+  return data;
+}
+
+function v182BuildBackup(){
+  return {
+    app:'古堅南FC AI Coach',
+    version:'18.2',
+    createdAt:new Date().toISOString(),
+    url:location.href,
+    localStorage:v182CollectLocalData(),
+    summary:{
+      players:Array.isArray(players)?players.length:0,
+      matches:Array.isArray(matches)?matches.length:0,
+      records:Array.isArray(records)?records.length:0,
+      reports:Array.isArray(reports)?reports.length:0,
+      videoNotes:Array.isArray(videoNotes)?videoNotes.length:0
+    }
+  };
+}
+
+function v182ReadBackups(){
+  try{return JSON.parse(localStorage.getItem(V182_BACKUP_KEY)||'[]')}catch(e){return[]}
+}
+
+function v182CreateBackup(manual=false){
+  try{
+    const list=v182ReadBackups();
+    list.unshift(v182BuildBackup());
+    localStorage.setItem(V182_BACKUP_KEY,JSON.stringify(list.slice(0,5)));
+    v182Dirty=false;
+    sessionStorage.removeItem(V182_DIRTY_KEY);
+    v182RenderBackupCenter();
+    if(manual)showMessage('バックアップを保存しました。','ok');
+    return true;
+  }catch(e){
+    showMessage('バックアップ保存に失敗しました。容量をご確認ください。');
+    return false;
+  }
+}
+
+function v182ToggleAutoBackup(enabled){
+  localStorage.setItem(V182_AUTO_KEY,enabled?'true':'false');
+  if(enabled){
+    v182StartAutoBackup();
+    v182CreateBackup(true);
+  }else{
+    clearInterval(v182BackupTimer);
+    v182BackupTimer=null;
+    showMessage('自動保存を停止しました。');
+  }
+}
+
+function v182StartAutoBackup(){
+  clearInterval(v182BackupTimer);
+  v182BackupTimer=setInterval(()=>v182CreateBackup(false),5*60*1000);
+}
+
+function v182ExportBackup(){
+  const backup=v182BuildBackup();
+  const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  const stamp=new Date().toISOString().replace(/[:.]/g,'-');
+  a.download=`古堅南FC_AI_Coach_Backup_${stamp}.json`;
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  showMessage('JSONバックアップを書き出しました。','ok');
+}
+
+async function v182ImportBackup(input){
+  const file=input.files&&input.files[0];if(!file)return;
+  try{
+    const json=JSON.parse(await file.text());
+    if(!json || !json.localStorage || typeof json.localStorage!=='object')throw new Error('形式不正');
+    if(!confirm('現在のブラウザ保存データを、選択したバックアップで上書きしますか？'))return;
+    v182CreateBackup(false);
+    Object.entries(json.localStorage).forEach(([k,v])=>localStorage.setItem(k,String(v)));
+    v182Dirty=false;
+    showMessage('バックアップを復元しました。画面を再読み込みします。','ok');
+    setTimeout(()=>location.reload(),800);
+  }catch(e){
+    showMessage('バックアップファイルを読み込めませんでした。');
+  }finally{
+    input.value='';
+  }
+}
+
+function v182RestoreBackup(index){
+  const list=v182ReadBackups(),item=list[index];if(!item)return;
+  if(!confirm('この自動保存データへ戻しますか？'))return;
+  Object.entries(item.localStorage||{}).forEach(([k,v])=>localStorage.setItem(k,String(v)));
+  showMessage('バックアップを復元しました。画面を再読み込みします。','ok');
+  setTimeout(()=>location.reload(),800);
+}
+
+function v182ClearBackups(){
+  if(!confirm('自動保存の履歴をすべて削除しますか？'))return;
+  localStorage.removeItem(V182_BACKUP_KEY);
+  v182RenderBackupCenter();
+}
+
+function v182RenderBackupCenter(){
+  const list=v182ReadBackups();
+  const last=list[0];
+  const lastEl=$('v182LastBackup');
+  if(lastEl)lastEl.textContent=last?new Date(last.createdAt).toLocaleString('ja-JP'):'未保存';
+  const count=$('v182BackupCount');if(count)count.textContent=`保存履歴 ${list.length}件`;
+  const toggle=$('v182AutoBackupToggle');if(toggle)toggle.checked=localStorage.getItem(V182_AUTO_KEY)!=='false';
+  v182RenderBackupHistory();
+  v182UpdateNetworkStatus();
+  v182UpdatePwaStatus();
+}
+
+function v182RenderBackupHistory(){
+  const box=$('v182BackupHistory');if(!box)return;
+  const list=v182ReadBackups();
+  if(!list.length){box.innerHTML='<div class="empty">まだバックアップはありません。</div>';return}
+  box.innerHTML=list.map((b,i)=>`
+    <article>
+      <div><b>${esc(new Date(b.createdAt).toLocaleString('ja-JP'))}</b>
+      <small>選手 ${b.summary?.players||0}人・試合 ${b.summary?.matches||0}件・動画メモ ${b.summary?.videoNotes||0}件</small></div>
+      <button class="light" onclick="v182RestoreBackup(${i})">この状態へ戻す</button>
+    </article>`).join('');
+}
+
+function v182UpdateNetworkStatus(){
+  const online=navigator.onLine;
+  const badge=$('v182OnlineBadge');if(badge){badge.textContent=online?'オンライン':'オフライン';badge.classList.toggle('offline',!online)}
+  const e=$('v182NetworkStatus');if(e)e.textContent=online?'オンライン':'オフライン';
+}
+
+function v182UpdatePwaStatus(){
+  const standalone=window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true;
+  const e=$('v182PwaStatus');if(e)e.textContent=standalone?'インストール済み':(v182DeferredPrompt?'インストール可能':'ブラウザ利用中');
+}
+
+async function v182InstallPwa(){
+  if(!v182DeferredPrompt){v182ShowInstallHelp();return}
+  v182DeferredPrompt.prompt();
+  await v182DeferredPrompt.userChoice;
+  v182DeferredPrompt=null;
+  const b=$('v182InstallButton');if(b)b.classList.add('hidden');
+  v182UpdatePwaStatus();
+}
+
+function v182ShowInstallHelp(){
+  const box=$('v182InstallHelp');if(!box)return;
+  box.classList.remove('hidden');
+  const isiOS=/iPhone|iPad|iPod/.test(navigator.userAgent);
+  box.innerHTML=isiOS
+   ?'<b>iPhone・iPad</b><ol><li>Safari下部の「共有」を押す</li><li>「ホーム画面に追加」を選ぶ</li><li>右上の「追加」を押す</li></ol>'
+   :'<b>Android・Mac</b><ol><li>ブラウザのメニューを開く</li><li>「アプリをインストール」または「ホーム画面に追加」を選ぶ</li><li>確認画面で追加する</li></ol>';
+}
+
+function v182ExtractVideoStats(){
+  let passes=0,shots=0,heat=0;
+  try{
+    if(typeof video17Data!=='undefined' && video17Data){
+      passes=Array.isArray(video17Data.passes)?video17Data.passes.length:0;
+      shots=Array.isArray(video17Data.shots)?video17Data.shots.length:0;
+      heat=(Array.isArray(video17Data.homePoints)?video17Data.homePoints.length:0)
+        +(Array.isArray(video17Data.awayPoints)?video17Data.awayPoints.length:0)
+        +(Array.isArray(video17Data.ballPoints)?video17Data.ballPoints.length:0);
+    }
+  }catch(e){}
+  return {passes,shots,heat};
+}
+
+function v182RefreshAiSummary(){
+  const s=v182ExtractVideoStats();
+  const set=(id,val)=>{const e=$(id);if(e)e.textContent=val};
+  set('v182AiMatches',Array.isArray(matches)?matches.length:0);
+  set('v182AiVideoNotes',Array.isArray(videoNotes)?videoNotes.length:0);
+  set('v182AiPasses',s.passes);
+  set('v182AiShots',s.shots);
+  const summary=$('v182VideoSummary');
+  if(summary)summary.innerHTML=`
+    <article><b>動画メモ</b><span>${Array.isArray(videoNotes)?videoNotes.length:0}件</span></article>
+    <article><b>パスライン</b><span>${s.passes}本</span></article>
+    <article><b>シュートライン</b><span>${s.shots}本</span></article>
+    <article><b>位置・軌跡データ</b><span>${s.heat}点</span></article>`;
+  const heat=$('v182HeatmapSummary');
+  if(heat){
+    const total=Math.max(1,s.heat);
+    heat.innerHTML=`
+      <div class="v182-heatbar"><span style="width:${Math.min(100,s.heat?70:0)}%"></span></div>
+      <strong>${s.heat} ポイント</strong>
+      <p>${s.heat?'記録済みの位置情報をヒートマップへ利用できます。':'動画画面で選手・ボール位置を記録すると、ここへ集計されます。'}</p>`;
+  }
+}

@@ -5,16 +5,16 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0284c7">
 <link rel="manifest" href="./manifest.webmanifest">
-<title>古堅南FC AI Coach Ver.18.1</title>
+<title>古堅南FC AI Coach Ver.18.2</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<link rel="stylesheet" href="./assets/css/app.css?v=18.1.0">
+<link rel="stylesheet" href="./assets/css/app.css?v=18.2.0">
 </head>
 <body>
-<header><div class="title"><span id="teamBrand"><img id="headerEmblem" class="header-emblem hidden" alt="エンブレム">⚽ 古堅南FC AI Coach Ver.18.1</span></div><div id="mode" class="subtitle">保護者閲覧モード</div></header>
+<header><div class="title"><span id="teamBrand"><img id="headerEmblem" class="header-emblem hidden" alt="エンブレム">⚽ 古堅南FC AI Coach Ver.18.2</span></div><div id="mode" class="subtitle">保護者閲覧モード</div></header>
 <nav>
-<button onclick="showPage('home')">ホーム</button><button onclick="showPage('players')">選手</button><button onclick="showPage('matches')">試合</button><button onclick="showPage('entry')">試合入力</button><button onclick="showPage('ranking')">ランキング</button><button onclick="showPage('analytics')">試合分析</button><button onclick="showPage('reports')">📄 レポート</button><button onclick="showPage('video')">🎥 動画メモ</button><button onclick="showPage('ai')">🤖 AI</button><button onclick="showPage('coach')">🧠 AI Coach</button><button onclick="showPage('ver7')">🚀 Ver.7 AI分析</button><button id="settingsNav" class="hidden" onclick="showPage('settings')">チーム設定</button><button onclick="showPage('login')">コーチログイン</button>
+<button onclick="showPage('home')">ホーム</button><button onclick="showPage('players')">選手</button><button onclick="showPage('matches')">試合</button><button onclick="showPage('entry')">試合入力</button><button onclick="showPage('ranking')">ランキング</button><button onclick="showPage('analytics')">試合分析</button><button onclick="showPage('reports')">📄 レポート</button><button onclick="showPage('video')">🎥 動画メモ</button><button onclick="showPage('ai')">🤖 AI</button><button onclick="showPage('coach')">🧠 AI Coach</button><button onclick="showPage('ver7')">🚀 Ver.7 AI分析</button><button onclick="showPage('backup')">🛡️ データ保護</button><button id="settingsNav" class="hidden" onclick="showPage('settings')">チーム設定</button><button onclick="showPage('login')">コーチログイン</button>
 </nav>
 <main>
 <div id="message" class="notice hidden"></div>
@@ -73,6 +73,32 @@
 <section id="analytics" class="page"><div class="card"><div class="section-title"><h3>📊 試合分析</h3><button class="light" onclick="resetAnalysisFilters()">絞り込み解除</button></div><div class="analysis-filters"><div><label>年度</label><select id="analysisSeason" onchange="renderAnalytics()"><option value="">すべて</option></select></div><div><label>大会</label><select id="analysisCompetition" onchange="renderAnalytics()"><option value="">すべて</option></select></div><div><label>開始日</label><input id="analysisFrom" type="date" onchange="renderAnalytics()"></div><div><label>終了日</label><input id="analysisTo" type="date" onchange="renderAnalytics()"></div></div></div><div id="analysisStats" class="grid"></div><div class="chart-grid"><div class="card chart-card"><h3>勝敗内訳</h3><div class="chart-wrap"><canvas id="resultChart"></canvas></div></div><div class="card chart-card"><h3>試合ごとの得点・失点</h3><div class="chart-wrap"><canvas id="scoreChart"></canvas></div></div><div class="card chart-card"><h3>出場時間 TOP10</h3><div class="chart-wrap"><canvas id="minutesChart"></canvas></div></div><div class="card chart-card"><h3>大会別成績</h3><div class="table"><table><thead><tr><th>大会</th><th>試合</th><th>勝</th><th>分</th><th>敗</th><th>得点</th><th>失点</th><th>勝率</th></tr></thead><tbody id="competitionBody"></tbody></table></div></div></div></section>
 
 <section id="ai" class="page">
+  <div class="v182-ai-overview">
+    <div>
+      <span>Ver.18.2 AI分析強化</span>
+      <h2>🤖 AI分析センター</h2>
+      <p>試合・選手・動画記録をまとめて、コーチが判断しやすい形へ整理します。</p>
+    </div>
+    <button onclick="v182RefreshAiSummary()">最新データで集計</button>
+  </div>
+
+  <div class="v182-ai-kpis">
+    <article><small>登録試合</small><strong id="v182AiMatches">0</strong><span>試合</span></article>
+    <article><small>動画メモ</small><strong id="v182AiVideoNotes">0</strong><span>件</span></article>
+    <article><small>パス記録</small><strong id="v182AiPasses">0</strong><span>本</span></article>
+    <article><small>シュート記録</small><strong id="v182AiShots">0</strong><span>本</span></article>
+  </div>
+
+  <div class="v182-ai-panels">
+    <div class="card">
+      <div class="section-title"><h3>📊 動画分析結果</h3><button class="light" onclick="v182RefreshAiSummary()">更新</button></div>
+      <div id="v182VideoSummary" class="v182-summary-list"></div>
+    </div>
+    <div class="card">
+      <div class="section-title"><h3>🔥 ヒートマップ集計</h3><span class="pill">記録データ</span></div>
+      <div id="v182HeatmapSummary" class="v182-heat-summary"></div>
+    </div>
+  </div>
   <div class="card ai-hero">
     <div>
       <div class="pill">Ver.7 Cloud AI</div>
@@ -173,7 +199,7 @@
 <section id="video" class="page">
   <div class="video181-hero">
     <div>
-      <span>古堅南FC AI Coach Ver.18.1</span>
+      <span>古堅南FC AI Coach Ver.18.2</span>
       <h2>🎥 AI動画分析</h2>
       <p>「動画を選ぶ → 記録する → AIでまとめる」の順番で使えます。</p>
     </div>
@@ -384,7 +410,7 @@
   <div class="video17-engine">
     <div class="video17-head">
       <div>
-        <span>古堅南FC AI Coach Ver.18.1</span>
+        <span>古堅南FC AI Coach Ver.18.2</span>
         <h3>🧠 AI Vision Engine</h3>
         <p>追跡候補を蓄積し、移動・保持・フォーメーション・ヒートマップを自動集計します。</p>
       </div>
@@ -639,8 +665,8 @@
 <section id="coach" class="page">
   <div class="coach11-hero">
     <div>
-      <span class="coach-version">古堅南FC AI Coach Ver.18.1</span>
-      <h2>迷わず使えるAI動画分析UIへ改善</h2>
+      <span class="coach-version">古堅南FC AI Coach Ver.18.2</span>
+      <h2>AI分析・PWA・自動バックアップ統合版</h2>
       <p>迷わず、5分で、次の指導まで。必要な機能だけを順番に使えます。</p>
     </div>
     <div class="coach11-hero-actions">
@@ -990,6 +1016,81 @@
     <span>AIは参考案です。体調・ケガ・本人の気持ち・当日の様子を優先し、最終判断は指導者が行ってください。</span>
   </div>
 </section>
+
+<section id="backup" class="page">
+  <div class="v182-backup-hero">
+    <div>
+      <span>Ver.18.2</span>
+      <h2>🛡️ データ保護・PWA設定</h2>
+      <p>自動保存、JSONバックアップ、復元、オフライン利用をまとめて管理します。</p>
+    </div>
+    <div class="v182-online" id="v182OnlineBadge">接続確認中</div>
+  </div>
+
+  <div class="v182-backup-grid">
+    <article class="card v182-status-card">
+      <b>💾</b>
+      <small>最終自動保存</small>
+      <strong id="v182LastBackup">未保存</strong>
+      <span id="v182BackupCount">保存履歴 0件</span>
+    </article>
+    <article class="card v182-status-card">
+      <b>📱</b>
+      <small>PWA状態</small>
+      <strong id="v182PwaStatus">確認中</strong>
+      <span>ホーム画面から起動できます</span>
+    </article>
+    <article class="card v182-status-card">
+      <b>🌐</b>
+      <small>通信状態</small>
+      <strong id="v182NetworkStatus">確認中</strong>
+      <span>オフライン時も基本画面を表示</span>
+    </article>
+  </div>
+
+  <div class="v182-backup-actions">
+    <div class="card">
+      <h3>定期的な自動保存</h3>
+      <p>ブラウザ内の設定・AI履歴・分析記録を5分ごとに保護します。</p>
+      <label class="v182-switch">
+        <input id="v182AutoBackupToggle" type="checkbox" onchange="v182ToggleAutoBackup(this.checked)">
+        <span></span><b>自動保存を有効にする</b>
+      </label>
+      <div class="v182-button-row">
+        <button onclick="v182CreateBackup(true)">今すぐ保存</button>
+        <button class="light" onclick="v182RenderBackupHistory()">履歴を更新</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>JSONバックアップ</h3>
+      <p>端末へファイルとして保存し、別の端末でも復元できます。</p>
+      <div class="v182-button-row">
+        <button onclick="v182ExportBackup()">JSONを書き出す</button>
+        <label class="v182-import-button">JSONから復元
+          <input type="file" accept=".json,application/json" onchange="v182ImportBackup(this)">
+        </label>
+      </div>
+      <div class="notice v182-warning">復元すると、同じ名前のブラウザ保存データが上書きされます。復元前に現在のバックアップを書き出してください。</div>
+    </div>
+
+    <div class="card">
+      <h3>アプリとして使う（PWA）</h3>
+      <p>iPhone・Android・Macのホーム画面へ追加すると、アプリのように起動できます。</p>
+      <div class="v182-button-row">
+        <button id="v182InstallButton" class="hidden" onclick="v182InstallPwa()">アプリをインストール</button>
+        <button class="light" onclick="v182ShowInstallHelp()">追加方法を見る</button>
+      </div>
+      <div id="v182InstallHelp" class="v182-install-help hidden"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title"><h3>バックアップ履歴</h3><button class="danger" onclick="v182ClearBackups()">履歴を削除</button></div>
+    <div id="v182BackupHistory" class="v182-backup-history"></div>
+  </div>
+</section>
+
 <section id="login" class="page"><div class="card"><h3>管理者・コーチログイン</h3><div id="loginOut"><label>メール</label><input id="loginEmail" type="email"><label>パスワード</label><input id="loginPassword" type="password"><br><button onclick="login()">ログイン</button></div><div id="loginIn" class="hidden"><p id="loginWho"></p><button class="secondary" onclick="logout()">ログアウト</button></div><hr><div class="muted">保護者はログインせず閲覧できます。入力権限はSupabaseの profiles テーブルで admin または coach に設定したアカウントだけです。</div></div></section>
 </main>
 <div id="playerModal" class="modal hidden"><div class="modal-box player-edit-modal">
@@ -1053,5 +1154,5 @@
 <div class="muted">MacのDockerで使う場合は https://furugen-minami-ai.onrender.com。iPhoneから使う場合は、後でHTTPS公開したAIサーバーURLが必要です。</div><br>
 <label>チーム向け補足指示（任意）</label><textarea id="aiTeamInstruction" placeholder="例：小学生に伝わる言葉を使い、安全を最優先にする"></textarea><br>
 <button onclick="saveAiSettings()">保存</button> <button class="secondary" onclick="closeAiSettings()">閉じる</button></div></div>
-<script src="./assets/js/app.js?v=18.1.0"></script>
+<script src="./assets/js/app.js?v=18.2.0"></script>
 </body></html>
