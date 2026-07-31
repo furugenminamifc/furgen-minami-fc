@@ -1,8 +1,8 @@
 {
-  "name": "古堅南FC AI Coach Ver.18.2.1",
+  "name": "古堅南FC AI Coach Ver.18.2.2",
   "short_name": "古堅南FC AI",
-  "description": "古堅南FC AI Coach Ver.18.2.1 表示修正版",
-  "start_url": "./?v=18.2.1&source=pwa",
+  "description": "古堅南FC AI Coach Ver.18.2.2 PWAキャッシュ完全修正版",
+  "start_url": "./?v=18.2.2&source=pwa",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
@@ -28,5 +28,5 @@
       "purpose": "any maskable"
     }
   ],
-  "id": "./?app=furugen-ai-coach-v18.2.1"
+  "id": "./?app=furugen-ai-coach-v18.2.2"
 }
