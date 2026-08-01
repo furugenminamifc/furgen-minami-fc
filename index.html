@@ -57,7 +57,7 @@
   <div class="table"><table><thead><tr><th>名前</th><th>区分</th><th>誕生日</th><th>次の誕生日まで</th><th>操作</th></tr></thead><tbody id="birthdayBody"></tbody></table></div>
 </div>
 </section>
-<section id="players" class="page"><div class="card"><div class="section-title"><h3>選手一覧</h3><button id="addPlayerBtn" class="hidden" onclick="openPlayerModal()">選手追加</button></div><div class="toolbar"><div class="field"><label>検索</label><input id="playerSearch" placeholder="名前・学年・ポジション" oninput="resetPlayerPage()"></div><div class="field"><label>状態</label><select id="statusFilter" onchange="resetPlayerPage()"><option value="">すべて</option><option>現役</option><option>卒団</option><option>退団</option></select></div></div><div class="table"><table><thead><tr><th>名前</th><th>学年</th><th>位置</th><th>状態</th><th>出場</th><th>得点</th><th>アシスト</th><th>時間</th><th>操作</th></tr></thead><tbody id="playerBody"></tbody></table></div>
+<section id="players" class="page"><div class="card"><div class="section-title"><div><h3>選手一覧</h3><div class="muted">カテゴリーとポジションで分けて確認できます。</div></div><button id="addPlayerBtn" class="hidden" onclick="openPlayerModal()">選手追加</button></div><div id="playerCategorySummary" class="player-category-summary"></div><div class="toolbar player-filter-toolbar"><div class="field"><label>検索</label><input id="playerSearch" placeholder="名前・カテゴリー・ポジション" oninput="resetPlayerPage()"></div><div class="field"><label>カテゴリー</label><select id="playerCategoryFilter" onchange="resetPlayerPage()"><option value="">すべて</option><option>U-12</option><option>U-11</option><option>U-10</option><option>U-9</option><option value="未設定">未設定</option></select></div><div class="field"><label>ポジション</label><select id="playerPositionFilter" onchange="resetPlayerPage()"><option value="">すべて</option><option>FP</option><option>GP</option><option>FP・GP</option></select></div><div class="field"><label>状態</label><select id="statusFilter" onchange="resetPlayerPage()"><option value="">すべて</option><option>現役</option><option>卒団</option><option>退団</option></select></div></div><div class="table"><table class="player-category-table"><thead><tr><th>名前</th><th>カテゴリー</th><th>ポジション</th><th>状態</th><th>出場</th><th>得点</th><th>アシスト</th><th>時間</th><th>操作</th></tr></thead><tbody id="playerBody"></tbody></table></div>
 <div id="playerPager" class="player-pager"></div>
 </div></section>
 <section id="matches" class="page"><div class="card"><h3>試合一覧</h3><div class="toolbar"><div class="field"><label>年度</label><select id="matchSeason" onchange="renderMatches()"><option value="">すべて</option></select></div><div class="field"><label>大会・相手検索</label><input id="matchSearch" oninput="renderMatches()"></div></div><div id="matchList"></div></div></section>
@@ -1300,9 +1300,9 @@
 <div class="grid">
 <div><label>名前 *</label><input id="editName"></div>
 <div><label>背番号</label><input id="editNumber"></div>
-<div><label>学年</label><input id="editGrade"></div>
+<div><label>カテゴリー</label><select id="editGrade"><option value="">未設定</option><option>U-12</option><option>U-11</option><option>U-10</option><option>U-9</option></select></div>
 <div><label>生年月日</label><input id="editBirthDate" type="date"></div>
-<div><label>ポジション</label><input id="editPosition" placeholder="GP・DF・MF・FW"></div>
+<div><label>ポジション</label><select id="editPosition"><option value="">未設定</option><option>FP</option><option>GP</option><option>FP・GP</option></select></div>
 <div><label>利き足</label><select id="editDominantFoot"><option value="">未設定</option><option>右</option><option>左</option><option>両足</option></select></div>
 <div><label>身長（cm）</label><input id="editHeight" type="number" min="0" max="250"></div>
 <div><label>体重（kg）</label><input id="editWeight" type="number" min="0" max="200" step="0.1"></div>
@@ -1360,14 +1360,16 @@
 <label>メモ（任意）</label><input id="birthdayMemo" placeholder="例：U-12担当">
 <div class="birthday-modal-actions"><button onclick="saveBirthdayEntry()">保存</button><button class="secondary" onclick="closeBirthdayEditor()">閉じる</button></div>
 </div></div>
-<link rel="stylesheet" href="./assets/css/birthday-v2001.css?build=20.0.3-20260801">
-<script src="./assets/js/app-v20.js?build=20.0.3-20260801"></script>
-<script src="./assets/js/birthday-v2001.js?build=20.0.3-20260801"></script>
-<script src="./assets/js/current-location-v2003.js?build=20.0.3-20260801"></script>
+<link rel="stylesheet" href="./assets/css/birthday-v2001.css?build=20.0.4-20260801">
+<link rel="stylesheet" href="./assets/css/player-categories-v2004.css?build=20.0.4-20260801">
+<script src="./assets/js/app-v20.js?build=20.0.4-20260801"></script>
+<script src="./assets/js/birthday-v2001.js?build=20.0.4-20260801"></script>
+<script src="./assets/js/current-location-v2003.js?build=20.0.4-20260801"></script>
+<script src="./assets/js/player-categories-v2004.js?build=20.0.4-20260801"></script>
 
 <script>
 (function(){
-  const VERSION = '20.0.3';
+  const VERSION = '20.0.4';
   function fixVersionDisplay(){
     document.title = '古堅南FC AI Coach Ver.' + VERSION;
     const brand = document.getElementById('teamBrand');
@@ -1383,8 +1385,8 @@
 </script>
 
 <div id="v1822CacheNotice" style="display:none;position:fixed;left:12px;right:12px;bottom:12px;z-index:99999;background:#0f172a;color:white;padding:12px 14px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.25);font-weight:800">
-Ver.20.0.3 現在位置表示・操作改善版の更新が必要です。
-<a href="./cache-reset.html?v=20.0.3-20260801" style="color:#7dd3fc;margin-left:8px">キャッシュを更新</a>
+Ver.20.0.4 選手カテゴリー・ポジション整理版の更新が必要です。
+<a href="./cache-reset.html?v=20.0.4-20260801" style="color:#7dd3fc;margin-left:8px">キャッシュを更新</a>
 </div>
-<div class="v20-fixed-badge">Ver.20.0.3 現在位置表示・操作改善版 / 20.0.3-20260801</div>
+<div class="v20-fixed-badge">Ver.20.0.4 選手カテゴリー・ポジション整理版 / 20.0.4-20260801</div>
 </body></html>

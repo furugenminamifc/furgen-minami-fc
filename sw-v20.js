@@ -1,5 +1,5 @@
-const CACHE='furugen-v20-20.0.3-20260801';
-const CORE=['./','./index.html?build=20.0.3-20260801','./manifest.webmanifest?build=20.0.3-20260801','./assets/css/app-v20.css?build=20.0.3-20260801','./assets/js/app-v20.js?build=20.0.3-20260801','./assets/css/current-location-v2003.css?build=20.0.3-20260801','./assets/js/current-location-v2003.js?build=20.0.3-20260801','./assets/css/birthday-v2001.css?build=20.0.3-20260801','./assets/js/birthday-v2001.js?build=20.0.3-20260801'];
+const CACHE='furugen-v20-20.0.4-20260801';
+const CORE=['./','./index.html?build=20.0.4-20260801','./manifest.webmanifest?build=20.0.4-20260801','./assets/css/app-v20.css?build=20.0.4-20260801','./assets/js/app-v20.js?build=20.0.4-20260801','./assets/css/current-location-v2003.css?build=20.0.4-20260801','./assets/js/current-location-v2003.js?build=20.0.4-20260801','./assets/css/birthday-v2001.css?build=20.0.4-20260801','./assets/js/birthday-v2001.js?build=20.0.4-20260801','./assets/css/player-categories-v2004.css?build=20.0.4-20260801','./assets/js/player-categories-v2004.js?build=20.0.4-20260801'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE))) });
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 self.addEventListener('fetch',e=>{
@@ -9,5 +9,5 @@ self.addEventListener('fetch',e=>{
  e.respondWith(fetch(e.request,{cache:'no-store'}).then(r=>{
    if(r&&r.ok){const x=r.clone();caches.open(CACHE).then(c=>c.put(e.request,x));}
    return r;
- }).catch(()=>caches.match(e.request).then(r=>r||caches.match('./index.html?build=20.0.3-20260801'))));
+ }).catch(()=>caches.match(e.request).then(r=>r||caches.match('./index.html?build=20.0.4-20260801'))));
 });
