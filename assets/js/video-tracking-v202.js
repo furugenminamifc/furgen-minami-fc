@@ -81,5 +81,7 @@ function render(){
  drawOverlay();drawPitch('trail');
  }
 function exportJson(){const payload={version:'20.2.0',exported_at:new Date().toISOString(),mode:'assisted_tracking',points};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`furugen-tracking-${new Date().toISOString().slice(0,10)}.json`;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000)}
+window.addEventListener('furugen:v202-updated',()=>{points=load();render();});
+window.FurugenTracking202={reload:()=>{points=load();render();},getVideo:()=>video};
 document.addEventListener('DOMContentLoaded',install);window.addEventListener('pageshow',install);setTimeout(install,1200);
 })();
