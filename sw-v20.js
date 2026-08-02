@@ -1,5 +1,5 @@
-const CACHE='furugen-v22-22.1-20260802';
-const BUILD='22.1-20260802';
+const CACHE='furugen-v22-22.2-20260802';
+const BUILD='22.2-20260802';
 const CORE=['./','./index.html?build='+BUILD,'./manifest.webmanifest?build='+BUILD,'./assets/css/app-v20.css','./assets/js/app-v20.js','./assets/css/live-match-v220.css?build='+BUILD,'./assets/js/live-match-v220.js?build='+BUILD];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>Promise.all(CORE.map(x=>c.add(x).catch(()=>null))))) });
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
