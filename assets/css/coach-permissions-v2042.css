@@ -1,4 +1,0 @@
-/* Ver.20.4.2 コーチ専用メニュー・試合入力権限制御版 */
-nav button.coach-only-hidden{display:none!important}
-.coach-access-notice{position:fixed;left:50%;top:18px;transform:translateX(-50%);z-index:100000;max-width:min(92vw,620px);padding:14px 18px;border-radius:14px;background:#7f1d1d;color:#fff;font-weight:900;box-shadow:0 12px 30px rgba(0,0,0,.28);text-align:center}
-.coach-access-notice small{display:block;margin-top:4px;font-weight:600;opacity:.9}
