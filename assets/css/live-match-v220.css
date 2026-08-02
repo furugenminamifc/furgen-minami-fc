@@ -6,3 +6,6 @@
 .live22-start{background:#16a34a!important;color:#fff!important;font-size:20px!important;padding:14px 30px!important;box-shadow:0 6px 18px rgba(22,163,74,.28)}
 .live22-format-banner{background:#ecfdf5;border:2px solid #86efac;border-radius:12px;padding:10px 14px;margin-bottom:12px;color:#166534}
 .live22-clock small{font-size:16px;color:#64748b}.live22-phase.timeup{color:#dc2626;font-weight:900}.live22-event-buttons button:disabled,.live22-actions button:disabled{opacity:.38;cursor:not-allowed}.live22-custom.hidden{display:none!important}
+
+/* Ver.22.1 ベンチモード */
+.live22-auto-save{display:flex;align-items:center;gap:8px;margin:14px 0;padding:12px;border:1px solid #86efac;background:#f0fdf4;border-radius:12px;font-weight:900;color:#166534}.live22-auto-save input{width:20px;height:20px}.live22-player button{min-width:68px}.live22-status{font-size:16px;font-weight:900}
