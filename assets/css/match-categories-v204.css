@@ -1,0 +1,14 @@
+/* Ver.20.4 試合カテゴリー正式対応 */
+.match-category-field select,#matchCategoryFilter,#analysisCategory{font-weight:900;border:2px solid #0ea5e9;background:#f0f9ff}
+.required-mark{font-size:11px;color:#dc2626}.match-category-badge{display:inline-flex;align-items:center;padding:4px 9px;border-radius:999px;background:#dbeafe;color:#1d4ed8;font-size:12px;font-weight:900;border:1px solid #93c5fd;margin:0 5px}.match-category-badge.is-unset{background:#f1f5f9;color:#64748b;border-color:#cbd5e1}.category-entry-guide{margin:10px 0;padding:11px 13px;border-radius:12px;background:#ecfeff;border:1px solid #67e8f9;color:#155e75}.category-entry-guide b{font-size:18px}.match-category-card{border-left:5px solid #0ea5e9}
+
+
+/* Ver.20.4.1 ステップアップ出場対応 */
+.stepup-controls{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:8px 0 12px;padding:10px 12px;border:2px solid #38bdf8;border-radius:12px;background:#f0f9ff}
+.stepup-toggle{display:flex;align-items:center;gap:8px;font-weight:900;color:#075985;cursor:pointer}
+.stepup-toggle input{width:20px;height:20px;accent-color:#0284c7}
+.stepup-help{font-size:12px;color:#475569}
+.player-entry.is-stepup-player{background:#fffbea;border-left:5px solid #f59e0b}
+.stepup-badge{display:inline-block;margin-left:5px;padding:2px 7px;border-radius:999px;background:#fef3c7;color:#92400e;font-size:11px;font-weight:900;border:1px solid #f59e0b}
+.player-origin-category{font-weight:800;color:#0369a1}
+@media(max-width:720px){.stepup-controls{align-items:flex-start}.stepup-toggle{font-size:13px}.stepup-help{width:100%}}
