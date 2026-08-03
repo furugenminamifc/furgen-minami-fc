@@ -1,0 +1,5 @@
+const CACHE='furugen-v2013-20.1.3-20260731';
+const CORE=['./','./index.html?build=20.1.3-20260731','./manifest.webmanifest?build=20.1.3-20260731','./assets/css/app-v2013.css?build=20.1.3-20260731','./assets/js/app-v2013.js?build=20.1.3-20260731'];
+self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE))) });
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
+self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;const u=new URL(e.request.url);if(u.origin!==location.origin)return;e.respondWith(fetch(e.request,{cache:'no-store'}).then(r=>{if(r&&r.ok){const x=r.clone();caches.open(CACHE).then(c=>c.put(e.request,x))}return r}).catch(()=>caches.match(e.request)))});
