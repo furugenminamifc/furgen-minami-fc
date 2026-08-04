@@ -1,0 +1,28 @@
+
+/* Ver.23.0 試合会場モード 完全版 */
+#m230, #matchday230{max-width:1180px;margin:0 auto;padding:14px}
+.m230-card{background:#fff;border:2px solid #0ea5e9;border-radius:22px;overflow:hidden;box-shadow:0 12px 30px rgba(15,23,42,.12)}
+.m230-card>header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px 22px;background:linear-gradient(135deg,#075985,#0284c7);color:#fff}
+.m230-card h2{margin:4px 0 0;font-size:24px}.m230-body{padding:18px}
+.m230-steps{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:18px}.m230-steps span{padding:9px;border-radius:999px;background:#e2e8f0;text-align:center;font-weight:800;font-size:13px}.m230-steps span.on{background:#0ea5e9;color:#fff}
+.m230-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.m230-grid label{font-weight:850;color:#334155}.m230-grid input,.m230-grid select{display:block;width:100%;margin-top:6px;padding:13px;border:1px solid #cbd5e1;border-radius:12px;font-size:16px;background:#fff}
+.m230-check{display:flex;align-items:center;gap:10px;margin:16px 0;padding:14px;border-radius:14px;background:#ecfdf5;font-weight:800}.m230-check input{width:22px;height:22px}
+.m230-status{padding:13px;border-radius:13px;font-weight:900;margin:12px 0}.m230-status.ok{background:#ecfdf5;color:#047857;border:1px solid #6ee7b7}.m230-status.error{background:#fff7ed;color:#c2410c;border:1px solid #fdba74}
+.m230-features{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.m230-features span{padding:9px 12px;border-radius:999px;background:#eff6ff;color:#075985;font-weight:850}
+.m230-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.m230-actions.center{justify-content:center}.m230-actions button,.m230-livebuttons button{border:0;border-radius:12px;padding:13px 18px;font-weight:900;font-size:16px;cursor:pointer;touch-action:manipulation}.m230-actions .primary{background:#16a34a;color:#fff}.m230-actions .danger{background:#e11d48;color:#fff}
+.m230-summary{display:flex;justify-content:space-between;gap:12px;padding:14px;background:#eff6ff;border-radius:14px;margin-bottom:12px;font-size:18px}
+.m230-list{display:grid;gap:8px}.m230-player{width:100%;display:grid;grid-template-columns:58px 1fr auto;align-items:center;gap:12px;padding:10px;border:2px solid #e2e8f0;border-radius:14px;background:#fff;text-align:left}.m230-player.selected{border-color:#22c55e;background:#f0fdf4}.m230-player img,.m230-mini img{width:52px;height:52px;border-radius:50%;object-fit:cover}.m230-avatar{font-size:32px}.m230-player span{display:flex;flex-direction:column}.m230-player small,.m230-mini small{color:#64748b}.m230-player strong{color:#15803d}
+.m230-matchinfo{padding:16px;background:#eff6ff;border-radius:15px}.m230-minis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.m230-mini{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid #cbd5e1;border-radius:13px}
+.m230-score{display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center;text-align:center;gap:10px;padding:20px;background:#f8fafc;border-radius:18px}.m230-score strong{display:block;font-size:52px}.m230-score b{display:block;font-size:44px}.m230-score small{color:#64748b;font-weight:800}
+.m230-livebuttons{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0}.m230-livebuttons button{background:#0ea5e9;color:#fff;min-height:60px}.m230-livebuttons .goal{background:#16a34a}
+.m230-events{border-top:1px solid #e2e8f0}.m230-events>div{display:flex;gap:15px;padding:10px;border-bottom:1px solid #e2e8f0}
+.m230-result{padding:18px;background:#ecfdf5;border-radius:15px}.m230-tablewrap{overflow:auto;margin-top:14px}.m230-tablewrap table{width:100%;border-collapse:collapse}.m230-tablewrap th,.m230-tablewrap td{padding:11px;border-bottom:1px solid #e2e8f0;text-align:center}.m230-tablewrap th:first-child,.m230-tablewrap td:first-child{text-align:left}
+.m230-float{position:fixed;right:14px;bottom:76px;z-index:9997;border:0;border-radius:999px;padding:14px 18px;background:#f59e0b;color:#083344;font-weight:950;box-shadow:0 8px 24px rgba(0,0,0,.2);touch-action:manipulation}
+@media(max-width:700px){
+ #matchday230{padding:8px}.m230-card h2{font-size:20px}.m230-card>header{padding:16px}.m230-body{padding:14px}
+ .m230-steps{display:flex;overflow:auto}.m230-steps span{min-width:145px}
+ .m230-grid{grid-template-columns:1fr}.m230-minis{grid-template-columns:1fr}
+ .m230-livebuttons{grid-template-columns:repeat(2,1fr)}
+ .m230-score strong{font-size:42px}.m230-score b{font-size:34px}
+ .m230-summary{flex-direction:column}.m230-player{grid-template-columns:52px 1fr auto}
+}
