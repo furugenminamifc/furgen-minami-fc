@@ -1,5 +1,5 @@
 
-/* 古堅南FC AI Coach Ver.23.0 試合会場モード 完全版
+/* 古堅南FC AI Coach Ver.23.0.2 試合会場モード 完全版
    Safari / iPhone / iPad / Android / Windows 共通・ゼロ再構築 */
 (function(){
 'use strict';
@@ -190,7 +190,7 @@ function setupView(){
   '<div class="m230-status '+(n?'ok':'error')+'">'+(n?'選手データ '+n+'名を読み込み済みです。':'選手データをまだ取得できていません。上部の「選手」を一度開いてください。')+'</div>'+
   '<div class="m230-features"><span>⚡ ワンタップ入力</span><span>⚽ 得点・アシスト</span><span>🔄 交代</span><span>🟨 警告</span><span>⏱ 出場時間自動集計</span></div>'+
   '<div class="m230-actions"><button type="button" class="primary" data-action="to-lineup">スタメン選択へ</button></div>';
-  return shell('Ver.23.0 試合会場モード 完全版',0,body);
+  return shell('Ver.23.0.2 試合会場モード 完全版',0,body);
 }
 function parseFormat(v){
   var m={
@@ -212,7 +212,7 @@ function toLineup(){
   if(list.length<starters){notify('選択可能な選手は'+list.length+'名です。人数制を変更してください。');return;}
   var f=parseFormat(value('m230format','single-20'));
   state={
-    version:'23.0',phase:'lineup',date:today(),category:cat,opponent:opp,
+    version:'23.0.2',phase:'lineup',date:today(),category:cat,opponent:opp,
     competition:String(value('m230comp','')).trim(),venue:String(value('m230venue','')).trim(),
     starterCount:starters,matchType:f[0],periodMinutes:f[1],formatLabel:f[2],
     autoSave:byId('m230auto')?byId('m230auto').checked:true,
@@ -333,19 +333,128 @@ function saveView(){
   }).join('');
   var body='<div class="m230-result"><h3>試合終了　古堅南FC '+state.gf+' - '+state.ga+' '+safe(state.opponent)+'</h3></div>'+
     '<div class="m230-tablewrap"><table><thead><tr><th>選手</th><th>出場</th><th>得点</th><th>アシスト</th><th>警告</th><th>退場</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
-    '<div class="m230-actions"><button type="button" data-action="archive">成績を保存して終了</button><button type="button" class="primary" data-action="new">次の試合を入力</button></div>';
+    '<div class="m230-actions"><button type="button" class="primary" data-action="archive" id="m230saveBtn">試合・選手成績を保存して終了</button><button type="button" class="primary" data-action="new">次の試合を入力</button></div>';
   return shell('STEP 5 / 成績保存',4,body);
 }
-function archiveAndClose(){
+async function archiveAndClose(){
+  if(!state)return;
+
+  var btn=byId('m230saveBtn');
+  if(btn){btn.disabled=true;btn.textContent='保存中…';}
+
+  var completed=JSON.parse(JSON.stringify(state));
+  var staff=false;
+  try{staff=(typeof isStaff==='function' && isStaff());}catch(e){staff=false;}
+
+  if(!staff){
+    if(btn){btn.disabled=false;btn.textContent='試合・選手成績を保存して終了';}
+    notify('Supabaseへ保存するには、管理者またはコーチでログインしてください。');
+    return;
+  }
+
   try{
-    var a=JSON.parse(localStorage.getItem(ARCHIVE_KEY)||'[]');
-    a.unshift(JSON.parse(JSON.stringify(state)));
-    localStorage.setItem(ARCHIVE_KEY,JSON.stringify(a.slice(0,100)));
-  }catch(e){}
-  try{
-    window.dispatchEvent(new CustomEvent('furugen-matchday-complete',{detail:JSON.parse(JSON.stringify(state))}));
-  }catch(e){}
-  state.finalized=true;save();notify('試合記録を保存しました。','ok');
+    if(typeof sb==='undefined' || !sb)throw new Error('Supabase接続を確認できません。');
+    if(typeof session==='undefined' || !session || !session.user)throw new Error('ログイン情報を確認できません。');
+
+    var matchRow={
+      match_date:completed.date,
+      category:completed.category||'',
+      competition:completed.competition||'',
+      opponent:completed.opponent||'',
+      venue:completed.venue||'',
+      goals_for:Number(completed.gf||0),
+      goals_against:Number(completed.ga||0),
+      season:Number(String(completed.date||today()).slice(0,4)),
+      memo:'試合会場モード Ver.23.0.2から登録',
+      created_by:session.user.id
+    };
+
+    var matchResult=await sb.from('matches').insert(matchRow).select().single();
+
+    // 古いDBでcategory列がない場合だけ、categoryを外して再試行
+    if(matchResult.error && String(matchResult.error.message||'').toLowerCase().indexOf('category')>=0){
+      delete matchRow.category;
+      matchResult=await sb.from('matches').insert(matchRow).select().single();
+    }
+    if(matchResult.error)throw new Error('試合保存エラー：'+matchResult.error.message);
+
+    var matchId=matchResult.data.id;
+    var recordRows=Object.keys(completed.stats||{}).map(function(id){
+      var p=completed.stats[id];
+      var mins=Math.max(0,Math.round(Number(p.activeMs||0)/60000));
+      var played=!!(p.starter || Number(p.activeMs||0)>0 || p.goals || p.assists || p.shots || p.yellow || p.red);
+      return {
+        match_id:matchId,
+        player_id:p.id,
+        played:played,
+        minutes:mins,
+        goals:Number(p.goals||0),
+        assists:Number(p.assists||0),
+        yellow:Number(p.yellow||0),
+        red:Number(p.red||0),
+        mvp:false,
+        created_by:session.user.id
+      };
+    }).filter(function(r){return r.played;});
+
+    if(recordRows.length){
+      var recordResult=await sb.from('records').insert(recordRows);
+      if(recordResult.error){
+        // 試合だけ残る不整合を避けるため、新規試合も削除
+        try{await sb.from('matches').delete().eq('id',matchId);}catch(ignore){}
+        throw new Error('選手成績保存エラー：'+recordResult.error.message);
+      }
+    }
+
+    try{
+      var a=JSON.parse(localStorage.getItem(ARCHIVE_KEY)||'[]');
+      completed.supabase_match_id=matchId;
+      a.unshift(completed);
+      localStorage.setItem(ARCHIVE_KEY,JSON.stringify(a.slice(0,100)));
+    }catch(e){}
+
+    try{
+      window.dispatchEvent(new CustomEvent('furugen-matchday-complete',{detail:completed}));
+    }catch(e){}
+
+    // 通常の試合一覧・ランキングを最新化
+    try{
+      if(typeof loadAll==='function')await loadAll();
+    }catch(e){console.warn('loadAll refresh',e);}
+
+    state={
+      version:'23.0.2',
+      phase:'complete',
+      date:completed.date,
+      opponent:completed.opponent,
+      gf:completed.gf,
+      ga:completed.ga,
+      matchId:matchId,
+      recordCount:recordRows.length,
+      savedAt:new Date().toISOString()
+    };
+    save();
+    render();
+    notify('試合と選手成績を保存しました。','ok');
+  }catch(err){
+    console.error('Ver23.0.2 save',err);
+    if(btn){btn.disabled=false;btn.textContent='試合・選手成績を保存して終了';}
+    notify(err && err.message ? err.message : '保存に失敗しました。');
+  }
+}
+function completeView(){
+  var body='<div class="m230-complete">'+
+    '<div class="m230-complete-icon">✅</div>'+
+    '<h3>保存が完了しました</h3>'+
+    '<p>古堅南FC '+Number(state.gf||0)+' - '+Number(state.ga||0)+' '+safe(state.opponent||'対戦相手')+'</p>'+
+    '<p>試合一覧へ1試合、選手成績へ'+Number(state.recordCount||0)+'名分を登録しました。</p>'+
+    '</div>'+
+    '<div class="m230-actions center">'+
+    '<button type="button" class="primary" data-action="go-matches">試合一覧で確認</button>'+
+    '<button type="button" data-action="new">次の試合を入力</button>'+
+    '<button type="button" data-action="go-home">ホームへ戻る</button>'+
+    '</div>';
+  return shell('STEP 5 / 保存完了',4,body);
 }
 function newMatch(){state=null;save();render();}
 function reset(){if(confirm('現在の試合記録を削除しますか？')){state=null;save();render();}}
@@ -367,6 +476,24 @@ function handleClick(e){
   if(a==='undo')return undo();
   if(a==='archive')return archiveAndClose();
   if(a==='new')return newMatch();
+  if(a==='go-matches'){
+    state=null;save();
+    if(typeof window.showPage==='function')window.showPage('matches');
+    else{
+      var matchBtn=Array.prototype.slice.call(document.querySelectorAll('nav button')).find(function(b){return b.textContent.trim()==='試合';});
+      if(matchBtn)matchBtn.click();
+    }
+    return;
+  }
+  if(a==='go-home'){
+    state=null;save();
+    if(typeof window.showPage==='function')window.showPage('home');
+    else{
+      var homeBtn=Array.prototype.slice.call(document.querySelectorAll('nav button')).find(function(b){return b.textContent.indexOf('ホーム')>=0;});
+      if(homeBtn)homeBtn.click();
+    }
+    return;
+  }
   if(a==='reset')return reset();
   if(player&&state&&state.phase==='lineup'){
     var next=!state.selected[player];
@@ -384,6 +511,7 @@ function render(){
   else if(state.phase==='confirm')page.innerHTML=confirmView();
   else if(state.phase==='live')page.innerHTML=liveView();
   else if(state.phase==='save')page.innerHTML=saveView();
+  else if(state.phase==='complete')page.innerHTML=completeView();
   else page.innerHTML=setupView();
   updateWorkLabel();
 }
@@ -391,7 +519,7 @@ function updateWorkLabel(){
   var candidates=document.querySelectorAll('.current-work, #currentWork, [data-current-work]');
   Array.prototype.forEach.call(candidates,function(el){el.textContent='🏟 試合会場モード';});
   Array.prototype.forEach.call(document.querySelectorAll('*'),function(el){
-    if(el.children.length===0 && el.textContent.trim()==='live24')el.textContent='🏟 試合会場モード';
+    if(el.children.length===0 && (el.textContent.trim()==='live24'||el.textContent.trim()==='matchday230'))el.textContent='🏟 試合会場モード';
   });
 }
 function startTimer(){

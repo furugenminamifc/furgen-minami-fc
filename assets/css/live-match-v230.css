@@ -26,3 +26,9 @@
  .m230-score strong{font-size:42px}.m230-score b{font-size:34px}
  .m230-summary{flex-direction:column}.m230-player{grid-template-columns:52px 1fr auto}
 }
+
+.m230-complete{text-align:center;padding:28px 16px;background:#ecfdf5;border-radius:18px}
+.m230-complete-icon{font-size:64px;line-height:1}
+.m230-complete h3{font-size:26px;margin:12px 0 8px;color:#047857}
+.m230-complete p{font-size:17px;color:#475569}
+#m230saveBtn:disabled{opacity:.65;cursor:wait}

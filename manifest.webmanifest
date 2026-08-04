@@ -1,8 +1,8 @@
 {
-  "name": "古堅南FC AI Coach Ver.23.0 試合会場モード 完全版",
-  "short_name": "古堅南FC 23.0",
+  "name": "古堅南FC AI Coach Ver.23.0.2 成績完全連携修正版",
+  "short_name": "古堅南FC 23.0.2",
   "description": "Safari・iPhone・iPad・Android・Windows対応の試合会場モード",
-  "start_url": "./index.html?build=23.0-20260804-rebuild&source=pwa",
+  "start_url": "./index.html?build=23.0.2-20260804-supabase-sync&source=pwa",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
