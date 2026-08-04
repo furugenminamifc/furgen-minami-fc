@@ -1,0 +1,13 @@
+/* Ver.22.8 試合会場モード完成版 追加スタイル */
+.live24-feature-list{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.live24-feature-list span{background:#eef8ff;border:1px solid #cce8fa;border-radius:999px;padding:8px 12px;font-weight:800;color:#075985}
+.live24-result-table-wrap{overflow:auto;margin:14px 0;border:1px solid #dbe5ef;border-radius:14px}
+.live24-result-table{width:100%;border-collapse:collapse;min-width:620px;background:#fff}
+.live24-result-table th,.live24-result-table td{padding:12px 10px;border-bottom:1px solid #e8eef4;text-align:center}
+.live24-result-table th{background:#073b5c;color:#fff;position:sticky;top:0}
+.live24-result-table td:first-child{text-align:left;font-weight:800}
+.live24-none{width:100%;padding:14px;border:2px dashed #94a3b8!important;background:#f8fafc!important;color:#334155!important;font-weight:900}
+@media(max-width:640px){
+  .live24-feature-list{display:grid;grid-template-columns:1fr 1fr}
+  .live24-feature-list span{text-align:center;font-size:13px}
+}
