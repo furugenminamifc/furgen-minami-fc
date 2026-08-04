@@ -1,8 +1,8 @@
 {
-  "name": "古堅南FC AI Coach Ver.23.0.3 全カテゴリー選手選択対応版",
-  "short_name": "古堅南FC 23.0.3",
-  "description": "試合カテゴリーに関係なく全カテゴリーの選手からスタメン・ベンチを選択可能",
-  "start_url": "./index.html?build=23.0.3-20260804-allcategories&source=pwa",
+  "name": "古堅南FC AI Coach Ver.23.0.4 全カテゴリー常時選択版",
+  "short_name": "古堅南FC 23.0.4",
+  "description": "試合カテゴリーに関係なく、常に全カテゴリーの選手からスタメンを選択可能",
+  "start_url": "./index.html?build=23.0.4-20260804-force-all-players&source=pwa",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",

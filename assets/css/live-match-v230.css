@@ -37,3 +37,10 @@
 .m230-filters{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
 .m230-filters button{border:1px solid #bae6fd;background:#f0f9ff;color:#075985;border-radius:999px;padding:8px 14px;font-weight:900;cursor:pointer;touch-action:manipulation}
 .m230-filters button.active{background:#0284c7;color:#fff;border-color:#0284c7}
+
+/* Ver.23.0.4 全カテゴリー常時選択 */
+.m230-roster-mode{
+  background:#ecfdf5!important;
+  color:#047857!important;
+  border:1px solid #86efac;
+}

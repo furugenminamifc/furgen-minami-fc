@@ -68,8 +68,26 @@ function eligible(cat){
   return all.sort(function(a,b){return a.name.localeCompare(b.name,'ja');});
 }
 
+function upgradeRosterToAll(){
+  if(!state || !state.category)return;
+  state.rosterMode='all';
+  if(!state.stats)state.stats={};
+  if(!state.selected)state.selected={};
+
+  eligible(state.category,'all').forEach(function(p){
+    if(!state.stats[p.id]){
+      state.stats[p.id]=Object.assign({},p,{
+        starter:false,onField:false,activeMs:0,onAt:null,
+        goals:0,assists:0,shots:0,yellow:0,red:0
+      });
+    }
+    if(typeof state.selected[p.id]==='undefined')state.selected[p.id]=false;
+  });
+}
 function load(){
   try{ state=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null'); }catch(e){ state=null; }
+  upgradeRosterToAll();
+  save();
 }
 function save(){
   try{
@@ -227,6 +245,7 @@ function toLineup(){
 }
 function selectedCount(){return Object.keys(state.selected||{}).filter(function(id){return state.selected[id];}).length;}
 function lineupView(){
+  upgradeRosterToAll();
   var players=Object.keys(state.stats).map(function(id){return state.stats[id];});
   var rows=players.map(function(p){
     var on=!!state.selected[p.id];
