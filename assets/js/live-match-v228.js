@@ -27,22 +27,39 @@ function normCat(v){
   if(['U-9','U9','3年','3年生','小学3年'].includes(s))return'U-9';
   return'未設定';
 }
+function rawPlayers(){
+  try{
+    if(Array.isArray(window.__FURUGEN_PLAYERS__) && window.__FURUGEN_PLAYERS__.length) return window.__FURUGEN_PLAYERS__;
+    if(typeof players!=='undefined' && Array.isArray(players) && players.length) return players;
+    if(Array.isArray(window.players) && window.players.length) return window.players;
+    return [];
+  }catch(e){console.error('Ver22.8.2 rawPlayers',e);return[]}
+}
 function roster(){
   try{
-    const src=(typeof players!=='undefined'&&Array.isArray(players))?players:(Array.isArray(window.players)?window.players:[]);
+    const src=rawPlayers();
     return src.map((p,i)=>({
       id:String(p.id||p.player_id||p.uuid||i),
       name:String(p.name||p.player_name||p.full_name||'').trim(),
       category:normCat(p.grade||p.category||p.age_category||p.school_year),
       position:String(p.position||p.positions||p.role||'未設定'),
       photo:String(p.photo_url||p.image_url||p.avatar_url||p.photo||p.image||''),
-      status:String(p.status||'現役')
-    })).filter(p=>p.name&&['現役','active','在籍','所属',''].includes(p.status));
-  }catch(e){console.error(e);return[]}
+      status:String(p.status??'現役').trim()
+    })).filter(p=>{
+      if(!p.name)return false;
+      const s=p.status.toLowerCase();
+      return !s || ['現役','active','在籍','所属','registered','current'].includes(s);
+    });
+  }catch(e){console.error('Ver22.8.2 roster',e);return[]}
 }
 function eligible(cat){
+  const all=roster();
   const ci=CATS.indexOf(cat);
-  return roster().filter(p=>{const pi=CATS.indexOf(p.category);return pi===ci||pi>ci})
+  const matched=all.filter(p=>{
+    const pi=CATS.indexOf(p.category);
+    return pi===ci || (ci===0 && pi>=0);
+  });
+  return (matched.length ? matched : all)
     .sort((a,b)=>CATS.indexOf(a.category)-CATS.indexOf(b.category)||a.name.localeCompare(b.name,'ja'));
 }
 function load(){try{S=JSON.parse(localStorage.getItem(KEY)||'null')}catch(_){S=null}}
@@ -120,7 +137,7 @@ function setup(){
       <label id="v24customMinutesWrap" class="hidden">1本／1ハーフ（分）<input id="v24minutes" type="number" min="1" max="90" value="20"></label>
     </div>
     <label class="live24-checkline"><input id="v24auto" type="checkbox" checked> 試合終了時、通常の試合入力へ転記し選手成績へ反映する</label>
-    <div class="live24-feature-list"><span>⚡ ワンタップ入力</span><span>⚽ 得点・アシスト</span><span>🔄 交代</span><span>🟨 警告</span><span>⏱ 出場時間自動集計</span></div>
+    <div id="v24RosterStatus" class="live24-roster-status">選手データを確認中です…</div><div class="live24-feature-list"><span>⚡ ワンタップ入力</span><span>⚽ 得点・アシスト</span><span>🔄 交代</span><span>🟨 警告</span><span>⏱ 出場時間自動集計</span></div>
     <div class="live24-actions"><button type="button" class="primary" data-v24="select">スタメン選択へ</button>${S?'<button type="button" class="danger" data-v24="reset">途中記録を削除</button>':''}</div>
   </div></div>`;
 }
@@ -154,13 +171,30 @@ function restoreSetup(){
     },0);
   }catch(_){}
 }
-function beginSelection(){
+async function beginSelection(){
   rememberSetup();
   const cat=$('v24cat')?.value,opp=$('v24opp')?.value.trim(),comp=$('v24comp')?.value.trim(),venue=$('v24venue')?.value.trim();
   if(!opp)return msg('対戦相手を入力してください。');
-  const [type,periodMinutes,label]=format(),starterCount=count(),list=eligible(cat);
-  if(list.length<starterCount)return msg(`候補選手が${list.length}名です。スタメン${starterCount}名を選べません。`);
-  S={version:'22.8',phase:'selection',date:today(),category:cat,opponent:opp,competition:comp,venue,matchType:type,periodMinutes,formatLabel:label,starterCount,autoSave:!!$('v24auto')?.checked,period:type==='half'?'前半':'1本',periodNo:1,started:false,running:false,runStartedAt:null,elapsedMs:0,gf:0,ga:0,lineup:{},stats:{},events:[],history:[],memo:'',shots:0,finalized:false};
+  const button=document.querySelector('[data-v24="select"]');
+  if(button){button.disabled=true;button.textContent='選手データ読込中…'}
+  let list=eligible(cat);
+  for(let i=0;i<15 && !list.length;i++){
+    await new Promise(r=>setTimeout(r,200));
+    list=eligible(cat);
+  }
+  const [type,periodMinutes,label]=format(),starterCount=count();
+  if(button){button.disabled=false;button.textContent='スタメン選択へ'}
+  if(!list.length){
+    const box=$('v24RosterStatus');
+    if(box){box.className='live24-roster-status error';box.textContent='選手データを取得できませんでした。上部の「選手」を一度開いてから、試合会場モードへ戻ってください。'}
+    return msg('選手データを取得できませんでした。上部の「選手」を一度開いて、選手一覧が表示されることを確認してください。');
+  }
+  if(list.length<starterCount){
+    const box=$('v24RosterStatus');
+    if(box){box.className='live24-roster-status error';box.textContent=`選択可能な選手は${list.length}名です。人数制を変更してください。`}
+    return msg(`選択可能な選手は${list.length}名です。スタメン人数を${list.length}名以下に変更してください。`);
+  }
+  S={version:'22.8.2',phase:'selection',date:today(),category:cat,opponent:opp,competition:comp,venue,matchType:type,periodMinutes,formatLabel:label,starterCount,autoSave:!!$('v24auto')?.checked,period:type==='half'?'前半':'1本',periodNo:1,started:false,running:false,runStartedAt:null,elapsedMs:0,gf:0,ga:0,lineup:{},stats:{},events:[],history:[],memo:'',shots:0,finalized:false};
   list.forEach(p=>{S.lineup[p.id]=false;S.stats[p.id]={...p,played:false,activeMs:0,onAt:null,goals:0,assists:0,shots:0,yellow:0,red:0}});
   save();render();
 }
@@ -215,7 +249,16 @@ function saveView(){
 }
 function render(){
   ensure();load();const p=$(PAGE);if(!p)return;
-  if(!S){p.innerHTML=setup();restoreSetup();}
+  if(!S){
+    p.innerHTML=setup();restoreSetup();
+    setTimeout(()=>{
+      const n=roster().length,box=$('v24RosterStatus');
+      if(box){
+        box.className='live24-roster-status '+(n?'ok':'error');
+        box.textContent=n?`選手データ ${n}名を読み込み済みです。`:'選手データをまだ取得できていません。上部の「選手」を一度開いてください。';
+      }
+    },300);
+  }
   else if(S.phase==='selection')p.innerHTML=selection();
   else if(S.phase==='ready')p.innerHTML=ready();
   else if(S.phase==='live')p.innerHTML=live();
