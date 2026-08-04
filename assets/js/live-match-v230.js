@@ -1,5 +1,5 @@
 
-/* 古堅南FC AI Coach Ver.23.0.6
+/* 古堅南FC AI Coach Ver.23.0.7
    試合会場モード 完全完成版（最終土台）
    試合カテゴリーに関係なく、常に全選手から選択 */
 (function(){
@@ -83,7 +83,7 @@ function avatar(p){return p.photo?'<img src="'+esc(p.photo)+'" alt="">':'<span c
 
 function setup(){
   var count=fullRoster().length;
-  return shell('Ver.23.0.6 試合会場モード 完全完成版',0,
+  return shell('Ver.23.0.7 試合会場モード 完全完成版',0,
     '<div class="m230-grid">'+
     '<label>試合カテゴリー<select id="m230cat"><option>U-12</option><option>U-11</option><option>U-10</option><option>U-9</option></select></label>'+
     '<label>対戦相手<input id="m230opp" placeholder="例：MOSTRO"></label>'+
@@ -105,7 +105,7 @@ function beginLineup(){
   var need=Number($('m230count').value||8);
   if(all.length<need){tell('登録選手が人数制より少ないです。');return}
   state={
-    version:'23.0.6',phase:'lineup',date:today(),
+    version:'23.0.7',phase:'lineup',date:today(),
     category:$('m230cat').value,opponent:opp,
     competition:String($('m230comp').value||'').trim(),
     venue:String($('m230venue').value||'').trim(),
@@ -213,7 +213,7 @@ function saveView(){
 async function saveResult(){
   if(typeof isStaff!=='function'||!isStaff())return tell('管理者またはコーチでログインしてください。');
   try{
-    var mr={match_date:state.date,category:state.category,competition:state.competition||'',opponent:state.opponent,venue:state.venue||'',goals_for:state.gf,goals_against:state.ga,season:Number(state.date.slice(0,4)),memo:'試合会場モード Ver.23.0.6から登録',created_by:session.user.id};
+    var mr={match_date:state.date,category:state.category,competition:state.competition||'',opponent:state.opponent,venue:state.venue||'',goals_for:state.gf,goals_against:state.ga,season:Number(state.date.slice(0,4)),memo:'試合会場モード Ver.23.0.7から登録',created_by:session.user.id};
     var x=await sb.from('matches').insert(mr).select().single();
     if(x.error)throw x.error;
     var mid=x.data.id;

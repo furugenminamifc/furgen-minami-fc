@@ -1,8 +1,8 @@
 {
-  "name": "古堅南FC AI Coach Ver.23.0.6 通算成績 試合履歴再集計版",
-  "short_name": "古堅南FC 23.0.6",
-  "description": "一覧・詳細・ランキングの通算成績を共通の試合履歴集計へ統一",
-  "start_url": "./index.html?build=23.0.6-20260804-history-recalc&source=pwa",
+  "name": "古堅南FC AI Coach Ver.23.0.7 過去成績加算 通算成績統一版",
+  "short_name": "古堅南FC 23.0.7",
+  "description": "過去成績を基礎値としてアプリ内試合履歴を加算し、通算成績を統一表示",
+  "start_url": "./index.html?build=23.0.7-20260804-lifetime-stats&source=pwa",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
