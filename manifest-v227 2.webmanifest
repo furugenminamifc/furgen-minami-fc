@@ -1,8 +1,8 @@
 {
-  "name": "古堅南FC AI Coach Ver.22.7.1 キャッシュ突破版",
-  "short_name": "古堅南FC 22.7.1",
-  "description": "古堅南FC AI Coach Ver.22.7.1 キャッシュ突破版",
-  "start_url": "./index.html?build=22.7.1-20260804-cachebreak&source=pwa",
+  "name": "古堅南FC AI Coach Ver.22.7 完全版（安定版）",
+  "short_name": "古堅南FC Ver22.7",
+  "description": "古堅南FC AI Coach Ver.22.7 完全版（安定版）",
+  "start_url": "./index.html?build=22.7-20260803-stable&source=pwa",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",

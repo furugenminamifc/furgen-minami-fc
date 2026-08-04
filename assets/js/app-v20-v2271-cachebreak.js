@@ -1,5 +1,5 @@
 
-const V1822_CACHE_VERSION='22.7-20260804-official';
+const V1822_CACHE_VERSION='22.7.1-20260804-cachebreak';
 async function v1822EnsureFreshCache(){
   try{
     const saved=localStorage.getItem('furugen_cache_version');
@@ -2869,6 +2869,6 @@ function v191SendTrainingToAi(){
 
 
 /* Ver.20 stable boot */
-window.V20_BUILD = "22.7-20260804-official";
-async function v20SafeBoot(){try{if('serviceWorker' in navigator){for(const r of await navigator.serviceWorker.getRegistrations()) await r.unregister();} if('caches' in window){for(const k of await caches.keys()) await caches.delete(k);} localStorage.setItem('furugen_v20_build','22.7-20260804-official');}catch(e){console.warn('V22.7 cleanup:',e);}}
+window.V20_BUILD = "22.7.1-20260804-cachebreak";
+async function v20SafeBoot(){try{if('serviceWorker' in navigator){for(const r of await navigator.serviceWorker.getRegistrations()) await r.unregister();} if('caches' in window){for(const k of await caches.keys()) await caches.delete(k);} localStorage.setItem('furugen_v20_build','22.7.1-20260804-cachebreak');}catch(e){console.warn('V22.7 cleanup:',e);}}
 window.addEventListener('load', v20SafeBoot);

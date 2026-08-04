@@ -1,4 +1,4 @@
-古堅南FC AI Coach Ver.22.7.1 キャッシュ突破版
+古堅南FC AI Coach Ver.22.7 完全版（安定版）
 
 【更新方法】
 1. このフォルダ内の全ファイル・全フォルダをGitHubリポジトリ直下へ上書きします。
@@ -7,10 +7,10 @@
 4. その後 index.html を開いてください。
 
 【主な対策】
-・CSS/JavaScriptをVer22.7.1専用ファイル名へ変更
+・CSS/JavaScriptをVer22.7専用ファイル名へ変更
 ・旧Service Workerを自動解除
 ・旧Cache Storageを自動削除
-・PWAマニフェストをVer22.7.1へ更新
+・PWAマニフェストをVer22.7へ更新
 ・Mac/Windows/iPhone/Androidで同じ最新版を取得しやすい構成
 
 公開URL例:
