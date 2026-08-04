@@ -10,7 +10,13 @@ const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const now=()=>Date.now();
 const today=()=>{const d=new Date(),p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`};
-const isCoach=()=>{try{return typeof isStaff==='function'&&isStaff()}catch(_){return false}};
+const isCoach=()=>{try{
+  if(typeof isStaff==='function' && isStaff()) return true;
+  if(window.currentUserRole && ['admin','coach'].includes(String(window.currentUserRole).toLowerCase())) return true;
+  const bodyText=(document.body?.innerText||'');
+  if(bodyText.includes('権限：admin') || bodyText.includes('権限: admin') || bodyText.includes('（管理者）')) return true;
+  return false;
+}catch(_){return false}};
 const msg=(t,type='warn')=>{try{typeof showMessage==='function'?showMessage(t,type):alert(t)}catch(_){alert(t)}};
 
 function normCat(v){
@@ -64,15 +70,27 @@ function undo(){
 function elapsed(){return !S?0:Number(S.elapsedMs||0)+(S.running?Math.max(0,now()-Number(S.runStartedAt||now())):0)}
 function fmt(ms){const n=Math.max(0,Math.floor(ms/1000));return `${String(Math.floor(n/60)).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`}
 function mins(ms){return Math.max(0,Math.round(Number(ms||0)/60000))}
+function ensureFloatingButton(){
+  let f=document.getElementById('live24Floating');
+  if(!f){
+    f=document.createElement('button');
+    f.id='live24Floating';
+    f.className='live24-floating';
+    f.textContent='🏟 試合会場モード';
+    f.onclick=open;
+    document.body.appendChild(f);
+  }
+}
 function ensure(){
+  ensureFloatingButton();
   let nav=$('live24Nav');
   if(!nav){
-    nav=document.createElement('button'); nav.id='live24Nav'; nav.textContent='🏟 試合会場';
+    nav=document.createElement('button'); nav.id='live24Nav'; nav.textContent='🏟 試合会場モード';
     nav.onclick=open;
     const n=document.querySelector('nav');
     if(n){const login=[...n.querySelectorAll('button')].find(b=>b.textContent.includes('コーチログイン'));n.insertBefore(nav,login||null)}
   }
-  nav?.classList.toggle('coach-only-hidden',!isCoach());
+  nav?.classList.remove('coach-only-hidden');
   let p=$(PAGE);
   if(!p){p=document.createElement('section');p.id=PAGE;p.className='page';document.querySelector('main')?.appendChild(p)}
   if(!$(MODAL)){const m=document.createElement('div');m.id=MODAL;m.className='live24-modal hidden';document.body.appendChild(m)}

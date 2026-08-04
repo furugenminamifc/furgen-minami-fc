@@ -11,3 +11,13 @@
   .live24-feature-list{display:grid;grid-template-columns:1fr 1fr}
   .live24-feature-list span{text-align:center;font-size:13px}
 }
+.live24-floating{
+  position:fixed;right:18px;bottom:82px;z-index:9997;
+  border:0;border-radius:999px;padding:14px 18px;
+  background:#f59e0b;color:#082f49;font-weight:950;
+  box-shadow:0 10px 28px rgba(0,0,0,.22);cursor:pointer;
+}
+.live24-floating:hover{transform:translateY(-1px)}
+@media(max-width:640px){
+  .live24-floating{right:12px;bottom:76px;padding:12px 15px;font-size:14px}
+}
