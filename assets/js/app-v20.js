@@ -1,3 +1,4 @@
+function displayAccountEmail(email){const v=String(email||'').trim().toLowerCase();if(v==='furrugen.minamifc@gmail.com')return 'furugen.minamifc@gmail.com';return email||''}
 
 const V1822_CACHE_VERSION='19.1.0';
 async function v1822EnsureFreshCache(){
@@ -39,7 +40,7 @@ async function init(){const c=window.FURUGEN_CONFIG;if(!c||!c.SUPABASE_URL||!c.S
     const reg=await await reg.update();
   }catch(e){ console.warn('PWA cache reset failed',e); }
 })();setTimeout(v182Init,200)}
-async function loadProfile(){profile=null;if(session){const r=await sb.from('profiles').select('*').eq('id',session.user.id).maybeSingle();profile=r.data}const staff=isStaff();$('mode').textContent=staff?`${session.user.email}（${profile.role==='admin'?'管理者':'コーチ'}）`:'保護者閲覧モード';$('loginOut').classList.toggle('hidden',!!session);$('loginIn').classList.toggle('hidden',!session);$('entryForm').classList.toggle('hidden',!staff);$('needLogin').classList.toggle('hidden',staff);$('addPlayerBtn').classList.toggle('hidden',!staff);if(session)$('loginWho').textContent=`${session.user.email} / 権限：${profile?.role||'未設定'}`}
+async function loadProfile(){profile=null;if(session){const r=await sb.from('profiles').select('*').eq('id',session.user.id).maybeSingle();profile=r.data}const staff=isStaff();$('mode').textContent=staff?`${displayAccountEmail(session.user.email)}（${profile.role==='admin'?'管理者':'コーチ'}）`:'保護者閲覧モード';$('loginOut').classList.toggle('hidden',!!session);$('loginIn').classList.toggle('hidden',!session);$('entryForm').classList.toggle('hidden',!staff);$('needLogin').classList.toggle('hidden',staff);$('addPlayerBtn').classList.toggle('hidden',!staff);if(session)$('loginWho').textContent=`${displayAccountEmail(session.user.email)} / 権限：${profile?.role||'未設定'}`}
 async function loadAll(){
  const [p,m,r,t,rp,vn,v7]=await Promise.all([
   sb.from('players').select('*').order('grade').order('name'),

@@ -1,4 +1,4 @@
-/* Ver.22.8 試合会場モード完成版 */
+/* Ver.22.8.3 試合会場モード 完全完成版 */
 (function(){
 'use strict';
 const KEY='furugen_live_match_v228';
@@ -124,7 +124,7 @@ function progress(step){
 function avatar(p){return p.photo?`<img src="${esc(p.photo)}" alt="">`:`<span class="live24-avatar">👤</span>`}
 function setup(){
   return `<div class="live24-card">
-  <header><div><small>🏟 MATCH DAY LIVE</small><h2>Ver.22.8 試合会場モード完成版</h2></div><b>${today()}</b></header>
+  <header><div><small>🏟 MATCH DAY LIVE</small><h2>Ver.22.8.3 試合会場モード 完全完成版</h2></div><b>${today()}</b></header>
   <div class="live24-body">${progress(0)}
     <div class="live24-grid">
       <label>カテゴリー<select id="v24cat">${CATS.map(x=>`<option>${x}</option>`).join('')}</select></label>
@@ -194,7 +194,7 @@ async function beginSelection(){
     if(box){box.className='live24-roster-status error';box.textContent=`選択可能な選手は${list.length}名です。人数制を変更してください。`}
     return msg(`選択可能な選手は${list.length}名です。スタメン人数を${list.length}名以下に変更してください。`);
   }
-  S={version:'22.8.2',phase:'selection',date:today(),category:cat,opponent:opp,competition:comp,venue,matchType:type,periodMinutes,formatLabel:label,starterCount,autoSave:!!$('v24auto')?.checked,period:type==='half'?'前半':'1本',periodNo:1,started:false,running:false,runStartedAt:null,elapsedMs:0,gf:0,ga:0,lineup:{},stats:{},events:[],history:[],memo:'',shots:0,finalized:false};
+  S={version:'22.8.3',phase:'selection',date:today(),category:cat,opponent:opp,competition:comp,venue,matchType:type,periodMinutes,formatLabel:label,starterCount,autoSave:!!$('v24auto')?.checked,period:type==='half'?'前半':'1本',periodNo:1,started:false,running:false,runStartedAt:null,elapsedMs:0,gf:0,ga:0,lineup:{},stats:{},events:[],history:[],memo:'',shots:0,finalized:false};
   list.forEach(p=>{S.lineup[p.id]=false;S.stats[p.id]={...p,played:false,activeMs:0,onAt:null,goals:0,assists:0,shots:0,yellow:0,red:0}});
   save();render();
 }
@@ -329,7 +329,7 @@ async function transfer(){
   setTimeout(()=>{
     setValue('matchDate',F.date);setValue('matchCategory',F.category);setValue('competition',F.competition);
     setValue('opponent',F.opponent);setValue('venue',F.venue);setValue('goalsFor',F.gf);setValue('goalsAgainst',F.ga);
-    setValue('matchMemo',`Ver.22.8 試合会場モード完成版\n試合形式：${F.formatLabel}\nスタメン：${F.starterCount}名\nシュート：${F.shots||0}本\nメモ：${F.memo||''}\n${F.events.slice().reverse().map(e=>`${e.time} ${e.text}`).join('\n')}`);
+    setValue('matchMemo',`Ver.22.8.3 試合会場モード 完全完成版\n試合形式：${F.formatLabel}\nスタメン：${F.starterCount}名\nシュート：${F.shots||0}本\nメモ：${F.memo||''}\n${F.events.slice().reverse().map(e=>`${e.time} ${e.text}`).join('\n')}`);
     try{typeof renderRecordInputs==='function'&&renderRecordInputs()}catch(e){console.error(e)}
     setTimeout(async()=>{
       let reflected=0;
