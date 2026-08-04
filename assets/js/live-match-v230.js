@@ -67,6 +67,9 @@ function ensure(){
   if(!page.dataset.bound){
     page.dataset.bound='1';
     page.addEventListener('click',click,false);
+    page.addEventListener('change',function(e){
+      if(e.target&&['m230compPreset','m230count','m230format'].includes(e.target.id))syncConditionFields();
+    },false);
   }
   var nav=$('matchday230Nav');
   if(!nav){
@@ -83,33 +86,61 @@ function avatar(p){return p.photo?'<img src="'+esc(p.photo)+'" alt="">':'<span c
 
 function setup(){
   var count=fullRoster().length;
-  return shell('Ver.23.1.2.2 試合会場モード 完全完成版',0,
+  return shell('Ver.23.1.3 試合会場モード 完全修正版',0,
     '<div class="m230-grid">'+
     '<label>試合カテゴリー<select id="m230cat"><option>U-12</option><option>U-11</option><option>U-10</option><option>U-9</option></select></label>'+
     '<label>対戦相手<input id="m230opp" placeholder="例：MOSTRO"></label>'+
-    '<label>大会名<input id="m230comp" placeholder="例：TRM"></label>'+
+    '<label>大会名<select id="m230compPreset"><option value="TML">TML</option><option value="TRM">TRM</option><option value="公式戦">公式戦</option><option value="リーグ戦">リーグ戦</option><option value="カップ戦">カップ戦</option><option value="custom">自由記入</option></select><input id="m230compCustom" class="hidden" placeholder="大会名を入力"></label>'+
     '<label>会場<input id="m230venue" placeholder="例：古堅南小学校"></label>'+
-    '<label>人数制<select id="m230count"><option value="8">8人制</option><option value="11">11人制</option><option value="5">5人制</option></select></label>'+
-    '<label>試合時間<select id="m230format"><option value="15">15分1本</option><option value="20" selected>20分1本</option><option value="25">25分1本</option></select></label>'+
+    '<label>人数制<select id="m230count"><option value="8">8人制</option><option value="11">11人制</option><option value="custom">自由選択</option></select><div id="m230countCustomWrap" class="m2313-extra hidden"><input id="m230countCustom" type="number" min="1" max="30" value="8"><span>人</span></div></label>'+
+    '<label>試合時間<select id="m230format"><option value="20half">20分ハーフ</option><option value="15half">15分ハーフ</option><option value="15single">15分1本</option><option value="20single">20分1本</option><option value="custom">自由記入</option></select><div id="m230formatCustomWrap" class="m2313-extra hidden"><input id="m230minutesCustom" type="number" min="1" max="120" value="15"><span>分</span><input id="m230periodsCustom" type="number" min="1" max="10" value="1"><span>本</span></div></label>'+
     '</div>'+
     '<div class="m230-status '+(count?'ok':'error')+'">'+(count?'全カテゴリーの選手 '+count+'名を読み込み済みです。':'選手データの読込待ちです。数秒後にもう一度押してください。')+'</div>'+
     '<div class="m230-note">試合カテゴリーに関係なく、スタメンは常に全選手から選べます。</div>'+
     '<div class="m230-actions"><button type="button" class="primary" data-a="lineup">スタメン選択へ</button></div>'
   );
 }
+function syncConditionFields(){
+  var cp=$('m230compPreset'),cc=$('m230compCustom');
+  if(cp&&cc)cc.classList.toggle('hidden',cp.value!=='custom');
+  var pc=$('m230count'),pw=$('m230countCustomWrap');
+  if(pc&&pw)pw.classList.toggle('hidden',pc.value!=='custom');
+  var fm=$('m230format'),fw=$('m230formatCustomWrap');
+  if(fm&&fw)fw.classList.toggle('hidden',fm.value!=='custom');
+}
+function getCompetition(){
+  var p=$('m230compPreset');
+  if(!p)return '';
+  return p.value==='custom'?String($('m230compCustom')?.value||'').trim():p.value;
+}
+function getStarterCount(){
+  var v=$('m230count')?.value||'8';
+  return v==='custom'?Math.max(1,Math.min(30,Number($('m230countCustom')?.value||8))):Number(v);
+}
+function getFormat(){
+  var v=$('m230format')?.value||'20half';
+  if(v==='20half')return{label:'20分ハーフ',minutes:20,periods:2};
+  if(v==='15half')return{label:'15分ハーフ',minutes:15,periods:2};
+  if(v==='15single')return{label:'15分1本',minutes:15,periods:1};
+  if(v==='20single')return{label:'20分1本',minutes:20,periods:1};
+  return{label:Number($('m230minutesCustom')?.value||15)+'分×'+Number($('m230periodsCustom')?.value||1)+'本',minutes:Number($('m230minutesCustom')?.value||15),periods:Number($('m230periodsCustom')?.value||1)};
+}
 function beginLineup(){
   var opp=String($('m230opp')?$('m230opp').value:'').trim();
   if(!opp){tell('対戦相手を入力してください。');return}
   var all=fullRoster();
   if(!all.length){tell('選手データをまだ取得できていません。5秒後にもう一度押してください。');return}
-  var need=Number($('m230count').value||8);
+  var need=getStarterCount();
+  var fmt=getFormat();
+  var comp=getCompetition();
+  if(!comp){tell('大会名を入力または選択してください。');return}
   if(all.length<need){tell('登録選手が人数制より少ないです。');return}
   state={
-    version:'23.1.2',phase:'lineup',date:today(),
+    version:'23.1.3',phase:'lineup',date:today(),
     category:$('m230cat').value,opponent:opp,
-    competition:String($('m230comp').value||'').trim(),
+    competition:comp,
     venue:String($('m230venue').value||'').trim(),
-    starterCount:need,periodMinutes:Number($('m230format').value||20),
+    starterCount:need,periodMinutes:fmt.minutes,periods:fmt.periods,matchFormat:fmt.label,
     filter:'ALL',selected:{},stats:{},events:[],history:[],
     elapsedMs:0,running:false,runStartedAt:null,gf:0,ga:0
   };
@@ -253,6 +284,7 @@ function render(){
   else if(state.phase==='live')p.innerHTML=live();
   else if(state.phase==='save')p.innerHTML=saveView();
   else p.innerHTML=setup();
+  if(!state)syncConditionFields();
   document.querySelectorAll('*').forEach(function(el){if(el.children.length===0&&(el.textContent.trim()==='live24'||el.textContent.trim()==='matchday230'))el.textContent='🏟 試合会場モード'})
 }
 function startTimer(){stopTimer();timer=setInterval(function(){var c=$('m230clock');if(c)c.textContent=timeText(elapsed())},500)}
