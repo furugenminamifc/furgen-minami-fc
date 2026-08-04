@@ -1,11 +1,11 @@
 {
   "id": "./?app=furugen-minami-ai-coach",
-  "name": "古堅南FC AI Coach Ver.23.1",
-  "short_name": "古堅南FC",
-  "description": "古堅南FC 選手・試合・成績・試合会場モード管理アプリ",
+  "name": "古堅南FC AI Coach Ver.23.1.2 試合条件・自由設定版",
+  "short_name": "古堅南FC 23.1.2",
+  "description": "人数制、試合時間、大会名を自由に設定できる試合会場モード",
   "lang": "ja",
   "dir": "ltr",
-  "start_url": "./index.html?build=23.1-20260804-pwa-emblem-final&source=pwa",
+  "start_url": "./index.html?build=23.1.2-20260805-match-conditions-flex&source=pwa",
   "scope": "./",
   "display": "standalone",
   "display_override": [
