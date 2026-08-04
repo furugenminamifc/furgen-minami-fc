@@ -1,0 +1,32 @@
+{
+  "name": "古堅南FC AI Coach Ver.22.7 完全安定版（正式版）",
+  "short_name": "古堅南FC Ver22.7正式版",
+  "description": "古堅南FC AI Coach Ver.22.7 完全安定版（正式版）",
+  "start_url": "./index.html?build=22.7-20260804-official&source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f4f7fb",
+  "theme_color": "#0284c7",
+  "lang": "ja",
+  "categories": [
+    "sports",
+    "productivity",
+    "education"
+  ],
+  "icons": [
+    {
+      "src": "./assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "id": "./?app=furugen-v227-official-20260804"
+}
