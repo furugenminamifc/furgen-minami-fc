@@ -44,7 +44,7 @@ async function loadAll(){
   sb.from('ai_plans').select('*').order('created_at',{ascending:false}).limit(100)
  ]);
  if(p.error||m.error||r.error){showMessage('データ取得エラー：'+(p.error||m.error||r.error).message);return}
- players=p.data||[];matches=m.data||[];records=r.data||[];window.__FURUGEN_PLAYERS__=players;window.dispatchEvent(new CustomEvent('furugen-players-loaded',{detail:{count:players.length}}));
+ players=p.data||[];window.__FURUGEN_PLAYERS__=players.slice();window.dispatchEvent(new CustomEvent('furugen-players-loaded',{detail:{count:players.length}}));matches=m.data||[];records=r.data||[];window.__FURUGEN_PLAYERS__=players;window.dispatchEvent(new CustomEvent('furugen-players-loaded',{detail:{count:players.length}}));
  reports=rp.error?[]:(rp.data||[]);
  videoNotes=vn.error?[]:(vn.data||[]);
  v7Plans=v7.error?JSON.parse(localStorage.getItem('furugenV7Plans')||'[]'):(v7.data||[]);
