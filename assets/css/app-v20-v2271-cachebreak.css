@@ -1581,3 +1581,12 @@ img[loading="lazy"]{content-visibility:auto}
 .v20-build{white-space:nowrap;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);padding:10px 12px;border-radius:999px;font-size:11px;font-weight:900}
 .v20-fixed-badge{position:fixed;right:10px;bottom:10px;z-index:99999;background:#082f49;color:#fff;padding:8px 11px;border-radius:999px;font:800 11px -apple-system,BlinkMacSystemFont,sans-serif;box-shadow:0 5px 18px rgba(0,0,0,.25)}
 @media(max-width:640px){.v20-launch-hero{align-items:flex-start;flex-direction:column}.v20-launch-hero h2{font-size:23px}}
+
+/* Ver.23.0.6 通算成績自動集計 */
+#editPastApps[readonly],#editPastGoals[readonly],#editPastAssists[readonly],
+#editPastYellow[readonly],#editPastRed[readonly]{
+ background:#eef6ff!important;
+ color:#075985!important;
+ font-weight:900!important;
+ cursor:not-allowed;
+}

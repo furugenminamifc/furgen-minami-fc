@@ -53,7 +53,50 @@ async function loadAll(){
  applyTeamSettings();refreshFilters();renderAll()
 }
 function setupRealtime(){sb.channel('furugen-live').on('postgres_changes',{event:'*',schema:'public',table:'players'},loadAll).on('postgres_changes',{event:'*',schema:'public',table:'matches'},loadAll).on('postgres_changes',{event:'*',schema:'public',table:'records'},loadAll).on('postgres_changes',{event:'*',schema:'public',table:'team_settings'},loadAll).on('postgres_changes',{event:'*',schema:'public',table:'ai_reports'},loadAll).on('postgres_changes',{event:'*',schema:'public',table:'video_notes'},loadAll).on('postgres_changes',{event:'*',schema:'public',table:'ai_plans'},loadAll).on('postgres_changes',{event:'*',schema:'public',table:'player_private'},loadAll).subscribe()}
-function totals(p){const rr=records.filter(x=>x.player_id===p.id);return{apps:(p.past_apps||0)+rr.filter(x=>x.played).length,minutes:rr.reduce((a,x)=>a+(x.minutes||0),0),goals:(p.past_goals||0)+rr.reduce((a,x)=>a+(x.goals||0),0),assists:(p.past_assists||0)+rr.reduce((a,x)=>a+(x.assists||0),0),yellow:(p.past_yellow||0)+rr.reduce((a,x)=>a+(x.yellow||0),0),red:(p.past_red||0)+rr.reduce((a,x)=>a+(x.red||0),0),mvp:rr.filter(x=>x.mvp).length}}
+function playerHistoryRecords(playerId){
+ const pid=String(playerId);
+ const linkedMatchIds=new Set((matches||[]).map(m=>String(m.id)));
+ const rows=(records||[]).filter(r=>String(r.player_id)===pid).filter(r=>{
+  if(!r.match_id)return true;
+  return linkedMatchIds.size===0||linkedMatchIds.has(String(r.match_id));
+ });
+ const byMatch=new Map();
+ const noMatch=[];
+ rows.forEach((r,index)=>{
+  if(!r.match_id){noMatch.push(r);return}
+  const key=String(r.match_id);
+  const current=byMatch.get(key);
+  if(!current){byMatch.set(key,r);return}
+  const a=Date.parse(current.updated_at||current.created_at||0)||0;
+  const b=Date.parse(r.updated_at||r.created_at||0)||0;
+  if(b>=a)byMatch.set(key,r);
+ });
+ return [...byMatch.values(),...noMatch];
+}
+function totals(p){
+ const rr=playerHistoryRecords(p.id);
+ const played=rr.filter(r=>r.played===true||r.played===1||String(r.played).toLowerCase()==='true');
+ const legacy={
+  apps:Number(p.past_apps||0),
+  goals:Number(p.past_goals||0),
+  assists:Number(p.past_assists||0),
+  yellow:Number(p.past_yellow||0),
+  red:Number(p.past_red||0)
+ };
+ return{
+  apps:legacy.apps+played.length,
+  minutes:rr.reduce((a,r)=>a+Number(r.minutes||0),0),
+  goals:legacy.goals+rr.reduce((a,r)=>a+Number(r.goals||0),0),
+  assists:legacy.assists+rr.reduce((a,r)=>a+Number(r.assists||0),0),
+  yellow:legacy.yellow+rr.reduce((a,r)=>a+Number(r.yellow||0),0),
+  red:legacy.red+rr.reduce((a,r)=>a+Number(r.red||0),0),
+  mvp:rr.filter(r=>r.mvp===true||r.mvp===1||String(r.mvp).toLowerCase()==='true').length,
+  historyCount:played.length,
+  legacyApps:legacy.apps
+ }
+}
+window.furugenPlayerHistoryRecords=playerHistoryRecords;
+window.furugenPlayerTotals=totals;
 function refreshFilters(){const seasons=[...new Set(matches.map(x=>x.season||String(x.match_date||'').slice(0,4)).filter(Boolean))].sort().reverse();$('matchSeason').innerHTML='<option value="">すべて</option>'+seasons.map(x=>`<option>${x}</option>`).join('');const grades=[...new Set(players.map(x=>x.grade).filter(Boolean))].sort();$('rankGrade').innerHTML='<option value="">すべて</option>'+grades.map(x=>`<option>${esc(x)}</option>`).join('');const as=$('analysisSeason'),ac=$('analysisCompetition');if(as){const seasons=[...new Set(matches.map(x=>x.season).filter(Boolean))].sort((a,b)=>b-a);const keep=as.value;as.innerHTML='<option value="">すべて</option>'+seasons.map(x=>`<option>${x}</option>`).join('');as.value=keep}if(ac){const comps=[...new Set(matches.map(x=>x.competition||'通常試合'))].sort((a,b)=>a.localeCompare(b,'ja'));const keep=ac.value;ac.innerHTML='<option value="">すべて</option>'+comps.map(x=>`<option>${esc(x)}</option>`).join('');ac.value=keep}}
 
 function coachTotalsForPlayer(p){
@@ -1105,7 +1148,7 @@ function openMatchEdit(id){if(!isStaff())return;const m=matches.find(x=>x.id===i
 function cancelMatchEdit(clear=true){editingMatchId='';editingMatchEvaluations=[];$('saveMatchBtn').textContent='試合を保存';$('cancelMatchEditBtn').classList.add('hidden');if(clear){['matchDate','competition','opponent','venue','matchMemo'].forEach(id=>$(id).value='');$('goalsFor').value=0;$('goalsAgainst').value=0;renderRecordInputs();renderMatchEvaluationInputs()}}
 async function deleteMatch(id){if(!isStaff()||!confirm('この試合と選手記録を削除しますか？'))return;const rr=await sb.from('records').delete().eq('match_id',id);if(rr.error){showMessage('選手記録の削除エラー：'+rr.error.message);return}const r=await sb.from('matches').delete().eq('id',id);if(r.error)showMessage(r.error.message);else{showMessage('試合を削除しました。','ok');await loadAll()}}
 function privateForPlayer(id){return playerPrivate.find(x=>String(x.player_id)===String(id))||{}}
-function openPlayerModal(id=''){const p=players.find(x=>String(x.id)===String(id)),pv=privateForPlayer(id);$('playerModalTitle').textContent=p?'選手編集':'選手追加';$('editPlayerId').value=p?.id||'';$('editPhotoData').value=p?.photo_url||'';$('playerPhotoPreview').src=p?.photo_url||defaultAvatar();$('editPhoto').value='';$('editName').value=p?.name||'';$('editNumber').value=p?.number||'';$('editGrade').value=p?.grade||'';$('editBirthDate').value=p?.birth_date||'';$('editPosition').value=p?.position||'';$('editDominantFoot').value=p?.dominant_foot||'';$('editHeight').value=p?.height_cm||'';$('editWeight').value=p?.weight_kg||'';$('editStatus').value=p?.status||'現役';$('editStrengths').value=p?.strengths||'';$('editDevelopmentGoal').value=p?.development_goal||'';$('editFatigue').value=pv.fatigue_level||3;$('editCondition').value=pv.condition_level||3;$('editCoachNote').value=pv.coach_note||'';$('editGuardianName').value=pv.guardian_name||'';$('editGuardianPhone').value=pv.guardian_phone||'';$('editGuardianEmail').value=pv.guardian_email||'';$('editEmergencyContact').value=pv.emergency_contact||'';$('editPastApps').value=p?.past_apps||0;$('editPastGoals').value=p?.past_goals||0;$('editPastAssists').value=p?.past_assists||0;$('editPastYellow').value=p?.past_yellow||0;$('editPastRed').value=p?.past_red||0;$('playerModal').classList.remove('hidden')}
+function openPlayerModal(id=''){const p=players.find(x=>String(x.id)===String(id)),pv=privateForPlayer(id);$('playerModalTitle').textContent=p?'選手編集':'選手追加';$('editPlayerId').value=p?.id||'';$('editPhotoData').value=p?.photo_url||'';$('playerPhotoPreview').src=p?.photo_url||defaultAvatar();$('editPhoto').value='';$('editName').value=p?.name||'';$('editNumber').value=p?.number||'';$('editGrade').value=p?.grade||'';$('editBirthDate').value=p?.birth_date||'';$('editPosition').value=p?.position||'';$('editDominantFoot').value=p?.dominant_foot||'';$('editHeight').value=p?.height_cm||'';$('editWeight').value=p?.weight_kg||'';$('editStatus').value=p?.status||'現役';$('editStrengths').value=p?.strengths||'';$('editDevelopmentGoal').value=p?.development_goal||'';$('editFatigue').value=pv.fatigue_level||3;$('editCondition').value=pv.condition_level||3;$('editCoachNote').value=pv.coach_note||'';$('editGuardianName').value=pv.guardian_name||'';$('editGuardianPhone').value=pv.guardian_phone||'';$('editGuardianEmail').value=pv.guardian_email||'';$('editEmergencyContact').value=pv.emergency_contact||'';const autoTotal=p?totals(p):{apps:0,goals:0,assists:0,yellow:0,red:0};$('editPastApps').value=autoTotal.apps;$('editPastGoals').value=autoTotal.goals;$('editPastAssists').value=autoTotal.assists;$('editPastYellow').value=autoTotal.yellow;$('editPastRed').value=autoTotal.red;['editPastApps','editPastGoals','editPastAssists','editPastYellow','editPastRed'].forEach(k=>{const el=$(k);if(el){el.readOnly=true;el.setAttribute('aria-readonly','true');el.title='試合履歴から自動集計されます';}});$('playerModal').classList.remove('hidden')}
 function closePlayerModal(){$('playerModal').classList.add('hidden')}
 function playerAge(date){if(!date)return '';const b=new Date(date),n=new Date();let a=n.getFullYear()-b.getFullYear();if(n.getMonth()<b.getMonth()||(n.getMonth()===b.getMonth()&&n.getDate()<b.getDate()))a--;return a>=0?`${a}歳`:''}
 function levelLabel(v,type){const n=Number(v)||3;return type==='fatigue'?['','とても元気','元気','普通','疲れ気味','強い疲労'][n]:['','低い','やや低い','普通','良い','とても良い'][n]}
@@ -1549,7 +1592,7 @@ MVP：${t.mvp}
 }
 function closePlayerDetail(){if(playerGrowthChart){playerGrowthChart.destroy();playerGrowthChart=null}$('playerDetailModal').classList.add('hidden')}
 function preparePlayerDetailAi(id){const p=players.find(x=>String(x.id)===String(id));if(!p)return;closePlayerDetail();showPage('ai');setAiMode('player',document.querySelector('[data-mode="player"]'));const t=totals(p),g=growthForPlayer(id).slice(0,5),med=medicalForPlayer(id).slice(0,3),sk=skillsForPlayer(id)[0],mev=matchEvaluationsForPlayer(id).slice(0,5);setAiPrompt(`${p.name}選手の育成評価を作成してください。\n学年：${p.grade||'未設定'}\nポジション：${p.position||'未設定'}\n強み：${p.strengths||'未入力'}\n次の目標：${p.development_goal||'未入力'}\n出場：${t.apps}試合、${t.minutes}分\n得点：${t.goals}、アシスト：${t.assists}、MVP：${t.mvp}\n最近の成長記録：${g.length?g.map(x=>`${x.record_date} 身長${x.height_cm||'-'}cm 体重${x.weight_kg||'-'}kg 疲労${x.fatigue_level} 調子${x.condition_level} ${injuryLabel(x.injury_status)} ${growthStatusLabel(x.training_status)}`).join(' / '):'未記録'}\n最近のメディカル情報：${med.length?med.map(x=>`${x.record_date} ${x.body_part||''} ${x.diagnosis||''} 復帰予定${x.return_date||'-'}`).join(' / '):'未記録'}\n最新技術評価：${sk?`ドリブル${sk.dribbling} パス${sk.passing} シュート${sk.shooting} 守備${sk.defending} スピード${sk.speed} 判断力${sk.decision_making} フィジカル${sk.physical} メンタル${sk.mental}`:'未評価'}\n最近の試合評価：${mev.length?mev.map(e=>{const m=matchById(e.match_id);return `${m?.match_date||''} ${m?.opponent||''} 総合${evaluationOverall(e)} 良かった点:${e.good_points||'-'} 改善点:${e.improvement_points||'-'}`}).join(' / '):'未評価'}\n本人に伝える良い点、伸ばしたい点、次の具体目標、前向きな声かけを小学生に伝わる言葉で作ってください。`)}
-async function savePlayer(){if(!isStaff())return;const name=$('editName').value.trim();if(!name){showMessage('名前を入力してください。');return}const id=$('editPlayerId').value||('P'+Date.now().toString(36));const data={id,name,photo_url:$('editPhotoData').value||null,number:$('editNumber').value.trim(),grade:$('editGrade').value.trim(),birth_date:$('editBirthDate').value||null,position:$('editPosition').value.trim(),dominant_foot:$('editDominantFoot').value,height_cm:+$('editHeight').value||null,weight_kg:+$('editWeight').value||null,status:$('editStatus').value,strengths:$('editStrengths').value.trim(),development_goal:$('editDevelopmentGoal').value.trim(),past_apps:+$('editPastApps').value||0,past_goals:+$('editPastGoals').value||0,past_assists:+$('editPastAssists').value||0,past_yellow:+$('editPastYellow').value||0,past_red:+$('editPastRed').value||0,updated_at:new Date().toISOString()};const r=await sb.from('players').upsert(data);if(r.error){showMessage(r.error.message);return}const privateData={player_id:String(id),fatigue_level:+$('editFatigue').value||3,condition_level:+$('editCondition').value||3,coach_note:$('editCoachNote').value.trim(),guardian_name:$('editGuardianName').value.trim(),guardian_phone:$('editGuardianPhone').value.trim(),guardian_email:$('editGuardianEmail').value.trim(),emergency_contact:$('editEmergencyContact').value.trim(),updated_at:new Date().toISOString()};const pr=await sb.from('player_private').upsert(privateData);if(pr.error){showMessage('基本情報は保存しましたが、非公開情報の保存に失敗しました：'+pr.error.message);return}closePlayerModal();showMessage('選手詳細を保存しました。','ok');await loadAll()}
+async function savePlayer(){if(!isStaff())return;const name=$('editName').value.trim();if(!name){showMessage('名前を入力してください。');return}const id=$('editPlayerId').value||('P'+Date.now().toString(36));const existingPlayer=players.find(x=>String(x.id)===String(id));const data={id,name,photo_url:$('editPhotoData').value||null,number:$('editNumber').value.trim(),grade:$('editGrade').value.trim(),birth_date:$('editBirthDate').value||null,position:$('editPosition').value.trim(),dominant_foot:$('editDominantFoot').value,height_cm:+$('editHeight').value||null,weight_kg:+$('editWeight').value||null,status:$('editStatus').value,strengths:$('editStrengths').value.trim(),development_goal:$('editDevelopmentGoal').value.trim(),past_apps:Number(existingPlayer?.past_apps||0),past_goals:Number(existingPlayer?.past_goals||0),past_assists:Number(existingPlayer?.past_assists||0),past_yellow:Number(existingPlayer?.past_yellow||0),past_red:Number(existingPlayer?.past_red||0),updated_at:new Date().toISOString()};const r=await sb.from('players').upsert(data);if(r.error){showMessage(r.error.message);return}const privateData={player_id:String(id),fatigue_level:+$('editFatigue').value||3,condition_level:+$('editCondition').value||3,coach_note:$('editCoachNote').value.trim(),guardian_name:$('editGuardianName').value.trim(),guardian_phone:$('editGuardianPhone').value.trim(),guardian_email:$('editGuardianEmail').value.trim(),emergency_contact:$('editEmergencyContact').value.trim(),updated_at:new Date().toISOString()};const pr=await sb.from('player_private').upsert(privateData);if(pr.error){showMessage('基本情報は保存しましたが、非公開情報の保存に失敗しました：'+pr.error.message);return}closePlayerModal();showMessage('選手詳細を保存しました。','ok');await loadAll()}
 async function deletePlayer(id){if(!isStaff())return;const p=players.find(x=>x.id===id);if(!p||!confirm(`「${p.name}」を削除しますか？\nこの選手の試合記録もすべて削除されます。`))return;const rr=await sb.from('records').delete().eq('player_id',id);if(rr.error){showMessage('選手記録の削除エラー：'+rr.error.message);return}const r=await sb.from('players').delete().eq('id',id);if(r.error)showMessage(r.error.message);else{showMessage('選手を削除しました。','ok');await loadAll()}}
 async function login(){const r=await sb.auth.signInWithPassword({email:$('loginEmail').value.trim(),password:$('loginPassword').value});if(r.error)showMessage('ログイン失敗：'+r.error.message);else showMessage('ログインしました。','ok')}
 async function logout(){await sb.auth.signOut();showMessage('ログアウトしました。','ok')}

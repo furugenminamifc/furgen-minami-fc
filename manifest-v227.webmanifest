@@ -1,8 +1,8 @@
 {
-  "name": "古堅南FC AI Coach Ver.23.0.5 試合会場モード完全完成版",
-  "short_name": "古堅南FC 23.0.5",
-  "description": "試合カテゴリーに関係なく常に全選手からスタメンを選択可能",
-  "start_url": "./index.html?build=23.0.5-20260804-final-foundation&source=pwa",
+  "name": "古堅南FC AI Coach Ver.23.0.6 通算成績 試合履歴再集計版",
+  "short_name": "古堅南FC 23.0.6",
+  "description": "一覧・詳細・ランキングの通算成績を共通の試合履歴集計へ統一",
+  "start_url": "./index.html?build=23.0.6-20260804-history-recalc&source=pwa",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
