@@ -121,12 +121,41 @@ function setup(){
     </div>
     <label class="live24-checkline"><input id="v24auto" type="checkbox" checked> 試合終了時、通常の試合入力へ転記し選手成績へ反映する</label>
     <div class="live24-feature-list"><span>⚡ ワンタップ入力</span><span>⚽ 得点・アシスト</span><span>🔄 交代</span><span>🟨 警告</span><span>⏱ 出場時間自動集計</span></div>
-    <div class="live24-actions"><button class="primary" data-v24="select">スタメン選択へ</button>${S?'<button class="danger" data-v24="reset">途中記録を削除</button>':''}</div>
+    <div class="live24-actions"><button type="button" class="primary" data-v24="select">スタメン選択へ</button>${S?'<button type="button" class="danger" data-v24="reset">途中記録を削除</button>':''}</div>
   </div></div>`;
 }
 function count(){const v=$('v24count')?.value||'8';return v==='custom'?Math.max(1,Math.min(18,Number($('v24customCount')?.value||8))):Number(v)}
 function format(){const v=$('v24format')?.value||'single-20',c=Math.max(1,Math.min(90,Number($('v24minutes')?.value||20)));const m={'single-15':['single',15,'15分1本'],'single-20':['single',20,'20分1本'],'single-25':['single',25,'25分1本'],'half-15':['half',15,'15分ハーフ'],'half-20':['half',20,'20分ハーフ'],'custom-single':['single',c,`${c}分1本`],'custom-half':['half',c,`${c}分ハーフ`]};return m[v]||m['single-20']}
+function rememberSetup(){
+  try{
+    localStorage.setItem('furugen_live_setup_v2281', JSON.stringify({
+      category:$('v24cat')?.value||'U-12',
+      opponent:$('v24opp')?.value||'',
+      competition:$('v24comp')?.value||'',
+      venue:$('v24venue')?.value||'',
+      count:$('v24count')?.value||'8',
+      format:$('v24format')?.value||'single-20',
+      auto:!!$('v24auto')?.checked
+    }));
+  }catch(_){}
+}
+function restoreSetup(){
+  try{
+    const d=JSON.parse(localStorage.getItem('furugen_live_setup_v2281')||'null');
+    if(!d)return;
+    setTimeout(()=>{
+      if($('v24cat'))$('v24cat').value=d.category||'U-12';
+      if($('v24opp'))$('v24opp').value=d.opponent||'';
+      if($('v24comp'))$('v24comp').value=d.competition||'';
+      if($('v24venue'))$('v24venue').value=d.venue||'';
+      if($('v24count'))$('v24count').value=d.count||'8';
+      if($('v24format'))$('v24format').value=d.format||'single-20';
+      if($('v24auto'))$('v24auto').checked=d.auto!==false;
+    },0);
+  }catch(_){}
+}
 function beginSelection(){
+  rememberSetup();
   const cat=$('v24cat')?.value,opp=$('v24opp')?.value.trim(),comp=$('v24comp')?.value.trim(),venue=$('v24venue')?.value.trim();
   if(!opp)return msg('対戦相手を入力してください。');
   const [type,periodMinutes,label]=format(),starterCount=count(),list=eligible(cat);
@@ -139,12 +168,12 @@ function selection(){
   const ids=Object.keys(S.stats),chosen=ids.filter(id=>S.lineup[id]);
   return `<div class="live24-card"><header><div><small>STEP 2 / スタメン選択</small><h2>${esc(S.category)} vs ${esc(S.opponent)}</h2></div><b>${chosen.length}/${S.starterCount}名</b></header>
   <div class="live24-body">${progress(1)}
-  <div class="live24-select-grid">${ids.map(id=>{const p=S.stats[id],on=S.lineup[id];return `<button class="live24-select-player ${on?'selected':''}" data-v24player="${esc(id)}">${avatar(p)}<span><b>${esc(p.name)}</b><small>${esc(p.category)} / ${esc(p.position)}</small></span><em>${on?'✓ 選択':'未選択'}</em></button>`}).join('')}</div>
-  <div class="live24-sticky"><strong>選択 ${chosen.length} / ${S.starterCount}名</strong><div class="live24-actions"><button data-v24="back">戻る</button><button class="primary" data-v24="confirm" ${chosen.length===S.starterCount?'':'disabled'}>開始前確認へ</button></div></div></div></div>`;
+  <div class="live24-select-grid">${ids.map(id=>{const p=S.stats[id],on=S.lineup[id];return `<button type="button" class="live24-select-player ${on?'selected':''}" data-v24player="${esc(id)}">${avatar(p)}<span><b>${esc(p.name)}</b><small>${esc(p.category)} / ${esc(p.position)}</small></span><em>${on?'✓ 選択':'未選択'}</em></button>`}).join('')}</div>
+  <div class="live24-sticky"><strong>選択 ${chosen.length} / ${S.starterCount}名</strong><div class="live24-actions"><button type="button" data-v24="back">戻る</button><button type="button" class="primary" data-v24="confirm" ${chosen.length===S.starterCount?'':'disabled'}>開始前確認へ</button></div></div></div></div>`;
 }
 function line(id,kind){
   const p=S.stats[id], liveMin=mins((p.activeMs||0)+(p.onAt?now()-p.onAt:0));
-  return `<div class="live24-player ${kind}">${avatar(p)}<span><b>${esc(p.name)}</b><small>${esc(p.category)} / ${esc(p.position)}${kind==='live'?` ・ ${liveMin}分`:''}</small></span>${kind==='live'?`<button data-v24sub="${esc(id)}">🔄 交代</button>`:''}</div>`;
+  return `<div class="live24-player ${kind}">${avatar(p)}<span><b>${esc(p.name)}</b><small>${esc(p.category)} / ${esc(p.position)}${kind==='live'?` ・ ${liveMin}分`:''}</small></span>${kind==='live'?`<button type="button" data-v24sub="${esc(id)}">🔄 交代</button>`:''}</div>`;
 }
 function ready(){
   const on=Object.keys(S.lineup).filter(id=>S.lineup[id]),off=Object.keys(S.lineup).filter(id=>!S.lineup[id]);
@@ -152,23 +181,23 @@ function ready(){
   <div class="live24-body">${progress(2)}<div class="live24-ready-banner">「▶ 試合開始」を押した瞬間から、タイマーと出場時間を同時に計測します。</div>
   <div class="live24-summary"><div>大会<b>${esc(S.competition||'未入力')}</b></div><div>会場<b>${esc(S.venue||'未入力')}</b></div><div>スタメン<b>${S.starterCount}名</b></div><div>形式<b>${esc(S.formatLabel)}</b></div></div>
   <div class="live24-rosters"><section><h3>スタメン</h3>${on.map(id=>line(id,'starter')).join('')}</section><section><h3>ベンチ</h3>${off.map(id=>line(id,'bench')).join('')||'<p>ベンチなし</p>'}</section></div>
-  <div class="live24-actions center"><button data-v24="edit">スタメンを変更</button><button class="kickoff" data-v24="kickoff">▶ ${S.period==='後半'?'後半開始':'試合開始'}</button><button class="danger" data-v24="reset">試合を取消</button></div></div></div>`;
+  <div class="live24-actions center"><button type="button" data-v24="edit">スタメンを変更</button><button type="button" class="kickoff" data-v24="kickoff">▶ ${S.period==='後半'?'後半開始':'試合開始'}</button><button type="button" class="danger" data-v24="reset">試合を取消</button></div></div></div>`;
 }
 function live(){
   const on=Object.keys(S.lineup).filter(id=>S.lineup[id]),off=Object.keys(S.lineup).filter(id=>!S.lineup[id]),e=elapsed(),limit=S.periodMinutes*60000,over=e>=limit;
   return `<div class="live24-card live"><header><div><small>🔴 LIVE MATCH</small><h2>${esc(S.category)} vs ${esc(S.opponent)}</h2></div><b>${esc(S.period)} / ${S.running?'進行中':'一時停止'}</b></header>
   <div class="live24-body">${progress(3)}${over?'<div class="live24-warning live24-timer-over">設定時間を超えています。試合終了または前半終了を押してください。</div>':''}
   <div class="live24-score"><div><b>古堅南FC</b><strong>${S.gf}</strong></div><div><span>${fmt(e)}</span><small>目安 ${fmt(limit)}</small></div><div><b>${esc(S.opponent)}</b><strong>${S.ga}</strong></div></div>
-  <div class="live24-controls"><button data-v24="toggle">${S.running?'⏸ 一時停止':'▶ 再開'}</button>${S.matchType==='half'&&S.period==='前半'?'<button data-v24="halftime">⏹ 前半終了</button>':''}<button class="danger" data-v24="finish">■ 試合終了</button></div>
+  <div class="live24-controls"><button type="button" data-v24="toggle">${S.running?'⏸ 一時停止':'▶ 再開'}</button>${S.matchType==='half'&&S.period==='前半'?'<button type="button" data-v24="halftime">⏹ 前半終了</button>':''}<button type="button" class="danger" data-v24="finish">■ 試合終了</button></div>
   <div class="live24-event-buttons">
-    <button class="goal" data-v24event="goal">⚽<span>得点</span></button>
-    <button class="assist" data-v24event="assist">🎯<span>アシスト</span></button>
-    <button class="shot" data-v24event="shot">💥<span>シュート</span></button>
-    <button class="opp" data-v24event="oppgoal">🥅<span>相手得点</span></button>
-    <button class="yellow" data-v24event="yellow">🟨<span>警告</span></button>
-    <button class="red" data-v24event="red">🟥<span>退場</span></button>
-    <button class="memo" data-v24="memo">📝<span>メモ</span></button>
-    <button class="undo" data-v24="undo">↩️<span>取り消し</span></button>
+    <button type="button" class="goal" data-v24event="goal">⚽<span>得点</span></button>
+    <button type="button" class="assist" data-v24event="assist">🎯<span>アシスト</span></button>
+    <button type="button" class="shot" data-v24event="shot">💥<span>シュート</span></button>
+    <button type="button" class="opp" data-v24event="oppgoal">🥅<span>相手得点</span></button>
+    <button type="button" class="yellow" data-v24event="yellow">🟨<span>警告</span></button>
+    <button type="button" class="red" data-v24event="red">🟥<span>退場</span></button>
+    <button type="button" class="memo" data-v24="memo">📝<span>メモ</span></button>
+    <button type="button" class="undo" data-v24="undo">↩️<span>取り消し</span></button>
   </div>
   <div class="live24-rosters live-grid"><section><h3>出場中 ${on.length}名</h3>${on.map(id=>line(id,'live')).join('')}</section><section><h3>ベンチ ${off.length}名</h3>${off.map(id=>line(id,'bench')).join('')||'<p>ベンチなし</p>'}</section><section class="timeline"><h3>記録タイムライン</h3>${S.events.map(x=>`<div><b>${esc(x.time)}</b><span>${esc(x.text)}</span></div>`).join('')||'<p>まだ記録はありません。</p>'}</section></div></div></div>`;
 }
@@ -182,11 +211,11 @@ function saveView(){
   <div class="live24-body">${progress(4)}
   <div class="live24-save-result"><h3>古堅南FC ${S.gf} - ${S.ga} ${esc(S.opponent)}</h3><p>${esc(S.date)} / ${esc(S.category)} / ${esc(S.formatLabel)}</p><p>記録 ${S.events.length}件・出場 ${Object.values(S.stats).filter(x=>x.played).length}名・シュート ${S.shots||0}本</p></div>
   <div class="live24-result-table-wrap"><table class="live24-result-table"><thead><tr><th>選手</th><th>出場</th><th>得点</th><th>アシスト</th><th>警告</th><th>退場</th></tr></thead><tbody>${playerRows()||'<tr><td colspan="6">記録なし</td></tr>'}</tbody></table></div>
-  <div class="live24-actions center"><button class="primary" data-v24="transfer">成績へ反映して保存</button><button data-v24="resume-finished">ライブ画面へ戻る</button><button class="danger" data-v24="reset">記録を破棄</button></div></div></div>`;
+  <div class="live24-actions center"><button type="button" class="primary" data-v24="transfer">成績へ反映して保存</button><button type="button" data-v24="resume-finished">ライブ画面へ戻る</button><button type="button" class="danger" data-v24="reset">記録を破棄</button></div></div></div>`;
 }
 function render(){
   ensure();load();const p=$(PAGE);if(!p)return;
-  if(!S)p.innerHTML=setup();
+  if(!S){p.innerHTML=setup();restoreSetup();}
   else if(S.phase==='selection')p.innerHTML=selection();
   else if(S.phase==='ready')p.innerHTML=ready();
   else if(S.phase==='live')p.innerHTML=live();
@@ -202,7 +231,7 @@ function halftime(){if(!S||S.matchType!=='half'||S.period!=='前半')return;snap
 function modal(content){const m=$(MODAL);m.innerHTML=`<div class="live24-modal-box">${content}</div>`;m.classList.remove('hidden')}
 function close(){ $(MODAL)?.classList.add('hidden') }
 function pick(title,ids,cb,allowNone=false){
-  modal(`<div class="live24-modal-head"><h2>${esc(title)}</h2><button data-v24="close">閉じる</button></div><div class="live24-picks">${ids.map(id=>`<button data-v24pick="${esc(id)}">${avatar(S.stats[id])}<span><b>${esc(S.stats[id].name)}</b><small>${esc(S.stats[id].category)} / ${esc(S.stats[id].position)}</small></span></button>`).join('')||'<p>対象選手がいません。</p>'}${allowNone?'<button class="live24-none" data-v24pick="__none__">アシストなし</button>':''}</div>`);
+  modal(`<div class="live24-modal-head"><h2>${esc(title)}</h2><button type="button" data-v24="close">閉じる</button></div><div class="live24-picks">${ids.map(id=>`<button type="button" data-v24pick="${esc(id)}">${avatar(S.stats[id])}<span><b>${esc(S.stats[id].name)}</b><small>${esc(S.stats[id].category)} / ${esc(S.stats[id].position)}</small></span></button>`).join('')||'<p>対象選手がいません。</p>'}${allowNone?'<button type="button" class="live24-none" data-v24pick="__none__">アシストなし</button>':''}</div>`);
   $(MODAL)._cb=cb;
 }
 function addEvent(type){
@@ -284,6 +313,8 @@ async function transfer(){
 }
 document.addEventListener('click',e=>{
   const t=e.target.closest('[data-v24],[data-v24player],[data-v24event],[data-v24sub],[data-v24pick]');if(!t)return;
+  e.preventDefault();
+  e.stopPropagation();
   const a=t.dataset.v24;
   if(a==='select')beginSelection();
   else if(a==='back')reset();
@@ -304,9 +335,11 @@ document.addEventListener('click',e=>{
   else if(t.dataset.v24sub)sub(t.dataset.v24sub);
   else if(t.dataset.v24pick){const cb=$(MODAL)._cb;close();typeof cb==='function'&&cb(t.dataset.v24pick)}
 });
+document.addEventListener('input',e=>{if(e.target.closest('#live24'))rememberSetup()});
 document.addEventListener('change',e=>{
   if(e.target.id==='v24count')$('v24customCountWrap')?.classList.toggle('hidden',e.target.value!=='custom');
   if(e.target.id==='v24format')$('v24customMinutesWrap')?.classList.toggle('hidden',!e.target.value.startsWith('custom'));
+  rememberSetup();
 });
 document.addEventListener('DOMContentLoaded',()=>{load();ensure();render();timer=setInterval(()=>{if(S?.phase==='live'&&S.running&&$(PAGE)?.classList.contains('show'))render()},1000)});
 window.addEventListener('pageshow',()=>{ensure();render()});

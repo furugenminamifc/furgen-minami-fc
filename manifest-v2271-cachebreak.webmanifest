@@ -1,8 +1,8 @@
 {
-  "name": "古堅南FC AI Coach Ver.22.8 試合会場モード完全版",
-  "short_name": "古堅南FC 22.8",
+  "name": "古堅南FC AI Coach Ver.22.8.1 スタメン選択修正版",
+  "short_name": "古堅南FC 22.8.1",
   "description": "試合中ワンタップ入力・得点・アシスト・交代・警告・出場時間自動集計・成績自動反映",
-  "start_url": "./index.html?build=22.8-20260804-matchday-complete-fix&source=pwa",
+  "start_url": "./index.html?build=22.8.1-20260804-lineupfix&source=pwa",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
