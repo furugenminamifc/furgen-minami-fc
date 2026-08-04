@@ -1,4 +1,4 @@
-/* Ver.22.8.3 試合会場モード 完全完成版 */
+/* Ver.22.8.4 試合会場モード 完全完成版 */
 (function(){
 'use strict';
 const KEY='furugen_live_match_v228';
@@ -124,7 +124,7 @@ function progress(step){
 function avatar(p){return p.photo?`<img src="${esc(p.photo)}" alt="">`:`<span class="live24-avatar">👤</span>`}
 function setup(){
   return `<div class="live24-card">
-  <header><div><small>🏟 MATCH DAY LIVE</small><h2>Ver.22.8.3 試合会場モード 完全完成版</h2></div><b>${today()}</b></header>
+  <header><div><small>🏟 MATCH DAY LIVE</small><h2>Ver.22.8.4 試合会場モード 完全完成版</h2></div><b>${today()}</b></header>
   <div class="live24-body">${progress(0)}
     <div class="live24-grid">
       <label>カテゴリー<select id="v24cat">${CATS.map(x=>`<option>${x}</option>`).join('')}</select></label>
@@ -171,32 +171,92 @@ function restoreSetup(){
     },0);
   }catch(_){}
 }
-async function beginSelection(){
-  rememberSetup();
-  const cat=$('v24cat')?.value,opp=$('v24opp')?.value.trim(),comp=$('v24comp')?.value.trim(),venue=$('v24venue')?.value.trim();
-  if(!opp)return msg('対戦相手を入力してください。');
-  const button=document.querySelector('[data-v24="select"]');
-  if(button){button.disabled=true;button.textContent='選手データ読込中…'}
-  let list=eligible(cat);
-  for(let i=0;i<15 && !list.length;i++){
-    await new Promise(r=>setTimeout(r,200));
-    list=eligible(cat);
+function beginSelection(){
+  try{
+    rememberSetup();
+    const cat=$('v24cat') ? $('v24cat').value : 'U-12';
+    const opp=$('v24opp') ? String($('v24opp').value||'').trim() : '';
+    const comp=$('v24comp') ? String($('v24comp').value||'').trim() : '';
+    const venue=$('v24venue') ? String($('v24venue').value||'').trim() : '';
+
+    if(!opp){
+      msg('対戦相手を入力してください。');
+      if($('v24opp')) $('v24opp').focus();
+      return;
+    }
+
+    const list=eligible(cat);
+    const f=format();
+    const type=f[0], periodMinutes=f[1], label=f[2];
+    const starterCount=count();
+
+    if(!list.length){
+      const box=$('v24RosterStatus');
+      if(box){
+        box.className='live24-roster-status error';
+        box.textContent='選手データを取得できませんでした。上部の「選手」を一度開いてください。';
+      }
+      msg('選手データを取得できませんでした。');
+      return;
+    }
+
+    if(list.length<starterCount){
+      const box=$('v24RosterStatus');
+      if(box){
+        box.className='live24-roster-status error';
+        box.textContent='選択可能な選手は'+list.length+'名です。人数制を変更してください。';
+      }
+      msg('選択可能な選手は'+list.length+'名です。人数制を変更してください。');
+      return;
+    }
+
+    S={
+      version:'22.8.4',
+      phase:'selection',
+      date:today(),
+      category:cat,
+      opponent:opp,
+      competition:comp,
+      venue:venue,
+      matchType:type,
+      periodMinutes:periodMinutes,
+      formatLabel:label,
+      starterCount:starterCount,
+      autoSave:$('v24auto') ? !!$('v24auto').checked : true,
+      period:type==='half'?'前半':'1本',
+      periodNo:1,
+      started:false,
+      running:false,
+      runStartedAt:null,
+      elapsedMs:0,
+      gf:0,
+      ga:0,
+      lineup:{},
+      stats:{},
+      events:[],
+      history:[],
+      memo:'',
+      shots:0,
+      finalized:false
+    };
+
+    list.forEach(function(p){
+      S.lineup[p.id]=false;
+      S.stats[p.id]=Object.assign({},p,{
+        played:false,activeMs:0,onAt:null,goals:0,assists:0,shots:0,yellow:0,red:0
+      });
+    });
+
+    save();
+    render();
+    setTimeout(function(){
+      const page=$(PAGE);
+      if(page) page.scrollIntoView({block:'start'});
+    },30);
+  }catch(err){
+    console.error('Ver22.8.4 beginSelection',err);
+    msg('スタメン画面を開けませんでした。ページを再読み込みしてください。');
   }
-  const [type,periodMinutes,label]=format(),starterCount=count();
-  if(button){button.disabled=false;button.textContent='スタメン選択へ'}
-  if(!list.length){
-    const box=$('v24RosterStatus');
-    if(box){box.className='live24-roster-status error';box.textContent='選手データを取得できませんでした。上部の「選手」を一度開いてから、試合会場モードへ戻ってください。'}
-    return msg('選手データを取得できませんでした。上部の「選手」を一度開いて、選手一覧が表示されることを確認してください。');
-  }
-  if(list.length<starterCount){
-    const box=$('v24RosterStatus');
-    if(box){box.className='live24-roster-status error';box.textContent=`選択可能な選手は${list.length}名です。人数制を変更してください。`}
-    return msg(`選択可能な選手は${list.length}名です。スタメン人数を${list.length}名以下に変更してください。`);
-  }
-  S={version:'22.8.3',phase:'selection',date:today(),category:cat,opponent:opp,competition:comp,venue,matchType:type,periodMinutes,formatLabel:label,starterCount,autoSave:!!$('v24auto')?.checked,period:type==='half'?'前半':'1本',periodNo:1,started:false,running:false,runStartedAt:null,elapsedMs:0,gf:0,ga:0,lineup:{},stats:{},events:[],history:[],memo:'',shots:0,finalized:false};
-  list.forEach(p=>{S.lineup[p.id]=false;S.stats[p.id]={...p,played:false,activeMs:0,onAt:null,goals:0,assists:0,shots:0,yellow:0,red:0}});
-  save();render();
 }
 function selection(){
   const ids=Object.keys(S.stats),chosen=ids.filter(id=>S.lineup[id]);
@@ -247,6 +307,36 @@ function saveView(){
   <div class="live24-result-table-wrap"><table class="live24-result-table"><thead><tr><th>選手</th><th>出場</th><th>得点</th><th>アシスト</th><th>警告</th><th>退場</th></tr></thead><tbody>${playerRows()||'<tr><td colspan="6">記録なし</td></tr>'}</tbody></table></div>
   <div class="live24-actions center"><button type="button" class="primary" data-v24="transfer">成績へ反映して保存</button><button type="button" data-v24="resume-finished">ライブ画面へ戻る</button><button type="button" class="danger" data-v24="reset">記録を破棄</button></div></div></div>`;
 }
+function bindDirectButtons(){
+  const selectBtn=document.querySelector('[data-v24="select"]');
+  if(selectBtn){
+    selectBtn.type='button';
+    selectBtn.onclick=function(ev){
+      if(ev){ev.preventDefault();ev.stopPropagation();}
+      beginSelection();
+      return false;
+    };
+  }
+
+  document.querySelectorAll('[data-v24player]').forEach(function(btn){
+    btn.type='button';
+    btn.onclick=function(ev){
+      if(ev){ev.preventDefault();ev.stopPropagation();}
+      togglePlayer(btn.getAttribute('data-v24player'));
+      return false;
+    };
+  });
+
+  const confirmBtn=document.querySelector('[data-v24="confirm"]');
+  if(confirmBtn){
+    confirmBtn.type='button';
+    confirmBtn.onclick=function(ev){
+      if(ev){ev.preventDefault();ev.stopPropagation();}
+      confirmLineup();
+      return false;
+    };
+  }
+}
 function render(){
   ensure();load();const p=$(PAGE);if(!p)return;
   if(!S){
@@ -264,6 +354,7 @@ function render(){
   else if(S.phase==='live')p.innerHTML=live();
   else if(S.phase==='save')p.innerHTML=saveView();
   else p.innerHTML=setup();
+  bindDirectButtons();
 }
 function togglePlayer(id){if(!S||S.phase!=='selection'||!(id in S.lineup))return;const n=Object.values(S.lineup).filter(Boolean).length;if(!S.lineup[id]&&n>=S.starterCount)return msg(`スタメンは${S.starterCount}名までです。`);S.lineup[id]=!S.lineup[id];save();render()}
 function confirmLineup(){const n=Object.values(S.lineup).filter(Boolean).length;if(n!==S.starterCount)return msg(`スタメンを${S.starterCount}名選択してください。`);Object.keys(S.stats).forEach(id=>S.stats[id].played=!!S.lineup[id]);S.phase='ready';save();render();msg('スタメンを確定しました。','ok')}
@@ -329,7 +420,7 @@ async function transfer(){
   setTimeout(()=>{
     setValue('matchDate',F.date);setValue('matchCategory',F.category);setValue('competition',F.competition);
     setValue('opponent',F.opponent);setValue('venue',F.venue);setValue('goalsFor',F.gf);setValue('goalsAgainst',F.ga);
-    setValue('matchMemo',`Ver.22.8.3 試合会場モード 完全完成版\n試合形式：${F.formatLabel}\nスタメン：${F.starterCount}名\nシュート：${F.shots||0}本\nメモ：${F.memo||''}\n${F.events.slice().reverse().map(e=>`${e.time} ${e.text}`).join('\n')}`);
+    setValue('matchMemo',`Ver.22.8.4 試合会場モード 完全完成版\n試合形式：${F.formatLabel}\nスタメン：${F.starterCount}名\nシュート：${F.shots||0}本\nメモ：${F.memo||''}\n${F.events.slice().reverse().map(e=>`${e.time} ${e.text}`).join('\n')}`);
     try{typeof renderRecordInputs==='function'&&renderRecordInputs()}catch(e){console.error(e)}
     setTimeout(async()=>{
       let reflected=0;
@@ -359,7 +450,7 @@ document.addEventListener('click',e=>{
   e.preventDefault();
   e.stopPropagation();
   const a=t.dataset.v24;
-  if(a==='select')beginSelection();
+  if(a==='select'){if(t.onclick)return;beginSelection();}
   else if(a==='back')reset();
   else if(a==='confirm')confirmLineup();
   else if(a==='edit'){S.phase='selection';save();render()}
@@ -377,7 +468,7 @@ document.addEventListener('click',e=>{
   else if(t.dataset.v24event)addEvent(t.dataset.v24event);
   else if(t.dataset.v24sub)sub(t.dataset.v24sub);
   else if(t.dataset.v24pick){const cb=$(MODAL)._cb;close();typeof cb==='function'&&cb(t.dataset.v24pick)}
-});
+},true);
 document.addEventListener('input',e=>{if(e.target.closest('#live24'))rememberSetup()});
 document.addEventListener('change',e=>{
   if(e.target.id==='v24count')$('v24customCountWrap')?.classList.toggle('hidden',e.target.value!=='custom');

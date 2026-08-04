@@ -1,8 +1,8 @@
 {
-  "name": "古堅南FC AI Coach Ver.22.8.3 試合会場モード 完全完成版",
-  "short_name": "古堅南FC 22.8.3",
-  "description": "試合情報・スタメン選択・試合開始前確認・ライブ記録・出場時間自動集計・成績反映を一体化",
-  "start_url": "./index.html?build=22.8.3.1-20260804-displayfix&source=pwa",
+  "name": "古堅南FC AI Coach Ver.22.8.4 試合会場モード 完全完成版",
+  "short_name": "古堅南FC 22.8.4",
+  "description": "Safari・Windows対応、スタメン選択、ライブ記録、出場時間自動集計、成績反映",
+  "start_url": "./index.html?build=22.8.4-20260804-safari-lineup-final&source=pwa",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",

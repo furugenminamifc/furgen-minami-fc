@@ -25,3 +25,13 @@
 .live24-roster-status{margin:12px 0;padding:11px 13px;border-radius:12px;font-weight:850;background:#eef4f8;color:#334155}
 .live24-roster-status.ok{background:#ecfdf5;color:#047857;border:1px solid #a7f3d0}
 .live24-roster-status.error{background:#fff7ed;color:#c2410c;border:1px solid #fed7aa}
+
+/* Ver.22.8.4 Safariクリック安定化 */
+[data-v24="select"],[data-v24="confirm"],[data-v24player]{
+  pointer-events:auto!important;
+  touch-action:manipulation;
+  position:relative;
+  z-index:5;
+  cursor:pointer!important;
+}
+.live24-actions{position:relative;z-index:6}
