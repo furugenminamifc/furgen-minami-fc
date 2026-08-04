@@ -32,3 +32,8 @@
 .m230-complete h3{font-size:26px;margin:12px 0 8px;color:#047857}
 .m230-complete p{font-size:17px;color:#475569}
 #m230saveBtn:disabled{opacity:.65;cursor:wait}
+
+.m230-roster-mode{margin:8px 0 12px;padding:10px 12px;border-radius:12px;background:#ecfeff;color:#0f766e;font-weight:900}
+.m230-filters{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+.m230-filters button{border:1px solid #bae6fd;background:#f0f9ff;color:#075985;border-radius:999px;padding:8px 14px;font-weight:900;cursor:pointer;touch-action:manipulation}
+.m230-filters button.active{background:#0284c7;color:#fff;border-color:#0284c7}
