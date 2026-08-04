@@ -1,32 +1,85 @@
 {
-  "name": "古堅南FC AI Coach Ver.23.0.7 過去成績加算 通算成績統一版",
-  "short_name": "古堅南FC 23.0.7",
-  "description": "過去成績を基礎値としてアプリ内試合履歴を加算し、通算成績を統一表示",
-  "start_url": "./index.html?build=23.0.7-20260804-lifetime-stats&source=pwa",
+  "id": "./?app=furugen-minami-ai-coach",
+  "name": "古堅南FC AI Coach Ver.23.1",
+  "short_name": "古堅南FC",
+  "description": "古堅南FC 選手・試合・成績・試合会場モード管理アプリ",
+  "lang": "ja",
+  "dir": "ltr",
+  "start_url": "./index.html?build=23.1-20260804-pwa-emblem-final&source=pwa",
   "scope": "./",
   "display": "standalone",
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "minimal-ui"
+  ],
   "orientation": "any",
-  "background_color": "#f4f7fb",
-  "theme_color": "#0284c7",
-  "lang": "ja",
+  "background_color": "#075985",
+  "theme_color": "#075985",
   "categories": [
     "sports",
-    "productivity",
-    "education"
+    "productivity"
   ],
   "icons": [
     {
       "src": "./assets/icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "./assets/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "./assets/icons/icon-1024.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./assets/icons/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./assets/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./assets/icons/icon-maskable-1024.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
-  "id": "./?app=furugen-v225-20260803"
+  "shortcuts": [
+    {
+      "name": "試合会場モード",
+      "short_name": "試合会場",
+      "url": "./index.html?build=23.1-20260804-pwa-emblem-final&page=matchday230",
+      "icons": [
+        {
+          "src": "./assets/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "選手一覧",
+      "short_name": "選手",
+      "url": "./index.html?build=23.1-20260804-pwa-emblem-final&page=players",
+      "icons": [
+        {
+          "src": "./assets/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
 }

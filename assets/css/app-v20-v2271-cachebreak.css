@@ -1601,3 +1601,57 @@ img[loading="lazy"]{content-visibility:auto}
 .lifetime-grid strong{display:block;font-size:24px;color:#0f172a}
 #editPastApps,#editPastGoals,#editPastAssists,#editPastYellow,#editPastRed{background:#fff!important;color:#111827!important;cursor:text!important}
 @media(max-width:640px){.lifetime-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* ======================================================
+   Ver.23.1 PWAエンブレム・Splash・Dark Mode
+   ====================================================== */
+html{background:#075985}
+body{
+  padding-top:env(safe-area-inset-top);
+  padding-bottom:env(safe-area-inset-bottom);
+  padding-left:env(safe-area-inset-left);
+  padding-right:env(safe-area-inset-right);
+}
+.app-splash{
+  position:fixed;inset:0;z-index:2147483647;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(155deg,#0284c7 0%,#075985 55%,#082f49 100%);
+  color:#fff;opacity:1;visibility:visible;
+  transition:opacity .42s ease,visibility .42s ease;
+}
+.app-splash::before{
+  content:"";position:absolute;inset:-20%;
+  background:radial-gradient(circle at 50% 35%,rgba(125,211,252,.35),transparent 42%);
+}
+.app-splash.is-hidden{opacity:0;visibility:hidden;pointer-events:none}
+.app-splash-inner{position:relative;text-align:center;padding:24px;animation:splashRise .7s ease both}
+.app-splash-inner img{
+  width:min(44vw,230px);height:min(44vw,230px);
+  border-radius:28%;box-shadow:0 22px 60px rgba(0,0,0,.28);
+}
+.app-splash-inner h1{margin:24px 0 4px;font-size:clamp(25px,6vw,48px);line-height:1.15}
+.app-splash-inner p{margin:0;letter-spacing:.12em;font-size:clamp(10px,2.6vw,15px);opacity:.82}
+.app-splash-inner span{display:inline-block;margin-top:18px;padding:7px 16px;border-radius:999px;background:rgba(255,255,255,.15);font-weight:900}
+@keyframes splashRise{from{transform:translateY(16px) scale(.96);opacity:0}to{transform:none;opacity:1}}
+
+@media (prefers-color-scheme: dark){
+  html,body{background:#061725;color:#e5edf5}
+  body{color-scheme:dark}
+  header{background:linear-gradient(135deg,#052f4b,#071c2c)!important}
+  nav{background:#071c2c!important;border-color:#17394f!important}
+  main,.page{background:#061725!important}
+  .card,.modal-content,.birthday-card,.m230-card{
+    background:#0b2233!important;color:#e5edf5!important;border-color:#24475e!important;
+    box-shadow:0 12px 30px rgba(0,0,0,.22)!important
+  }
+  input,select,textarea{
+    background:#102b3e!important;color:#f8fafc!important;border-color:#35556b!important
+  }
+  table,th,td{color:#e5edf5!important;border-color:#28475a!important}
+  th{background:#102b3e!important}
+  .muted,.subtitle,small{color:#a8bfd0!important}
+  .app-splash{background:linear-gradient(155deg,#052f4b 0%,#031f33 55%,#010c14 100%)}
+}
+@media (display-mode:standalone){
+  header{padding-top:max(12px,env(safe-area-inset-top))}
+}
