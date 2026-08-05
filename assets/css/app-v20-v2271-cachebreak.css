@@ -1841,3 +1841,81 @@ body{
  .record-adjustment-grid{grid-template-columns:1fr}
  .player-record-editor-modal{width:96%;padding:12px}
 }
+
+/* Ver.23.3.2 履歴ボタン表示・目標値補正 */
+.player-actions-cell{
+  min-width:300px!important;
+  overflow:visible!important;
+  white-space:normal!important;
+}
+.player-actions-wrap{
+  display:flex!important;
+  flex-wrap:wrap!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:6px!important;
+  min-width:280px!important;
+  overflow:visible!important;
+}
+.player-actions-wrap button{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-height:38px!important;
+  padding:8px 11px!important;
+  margin:0!important;
+  opacity:1!important;
+  visibility:visible!important;
+  position:relative!important;
+}
+.record-edit-btn{
+  display:inline-flex!important;
+  background:#7c3aed!important;
+  color:#fff!important;
+  border:2px solid #5b21b6!important;
+  border-radius:10px!important;
+  font-weight:900!important;
+  min-width:100px!important;
+  opacity:1!important;
+  visibility:visible!important;
+}
+.record-adjustment-current{
+  margin:10px 0;
+  padding:12px;
+  border-radius:12px;
+  background:#eff6ff;
+  border:2px solid #60a5fa;
+  color:#1e3a8a;
+  font-weight:900;
+}
+.record-adjustment-difference{
+  margin:12px 0;
+  padding:12px;
+  border-radius:12px;
+  font-weight:900;
+  line-height:1.6;
+}
+.record-adjustment-difference.ok{
+  background:#ecfdf5;
+  border:2px solid #34d399;
+  color:#065f46;
+}
+.record-adjustment-difference.error{
+  background:#fef2f2;
+  border:2px solid #ef4444;
+  color:#991b1b;
+}
+.record-adjustment-warning{
+  margin:10px 0;
+  padding:12px;
+  border-radius:12px;
+  background:#fff7ed;
+  border:2px solid #fb923c;
+  color:#9a3412;
+  font-weight:800;
+}
+@media(max-width:760px){
+  .player-actions-cell{min-width:240px!important}
+  .player-actions-wrap{min-width:220px!important}
+  .record-edit-btn{min-width:92px!important}
+}

@@ -1,11 +1,11 @@
 {
   "id": "./?app=furugen-minami-ai-coach",
-  "name": "古堅南FC AI Coach Ver.23.3.1 選手別試合履歴編集版",
-  "short_name": "古堅南FC 23.3.1",
-  "description": "選手ごとのrecordsを編集・削除・補正追加できる版",
+  "name": "古堅南FC AI Coach Ver.23.3.2 選手別試合履歴編集 完全版",
+  "short_name": "古堅南FC 23.3.2",
+  "description": "履歴編集ボタン・選手別records編集・通算目標値補正",
   "lang": "ja",
   "dir": "ltr",
-  "start_url": "./index.html?build=23.3.1-20260805-player-record-editor-final&source=pwa",
+  "start_url": "./index.html?build=23.3.2-20260805-player-history-editor-visible-final&source=pwa",
   "scope": "./",
   "display": "standalone",
   "display_override": [
