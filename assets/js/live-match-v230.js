@@ -1,5 +1,5 @@
 
-/* 古堅南FC AI Coach Ver.23.3.2 選手別試合履歴編集 完全版
+/* 古堅南FC AI Coach Ver.23.3.3 試合会場モード コーチログイン権限対応版
    試合会場モード 完全完成版（最終土台）
    試合カテゴリーに関係なく、常に全選手から選択 */
 (function(){
@@ -14,6 +14,27 @@ var timer=null;
 function $(id){return document.getElementById(id);}
 function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function tell(t,type){try{if(typeof showMessage==='function')showMessage(t,type||'warn');else alert(t);}catch(e){alert(t);}}
+function isCoachLoggedIn(){
+  try{return typeof isStaff==='function'&&!!isStaff()}catch(e){return false}
+}
+function requireCoach(){
+  if(isCoachLoggedIn())return true;
+  tell('試合会場モードの操作には、管理者またはコーチログインが必要です。');
+  render();
+  return false;
+}
+function permissionView(){
+  return shell('試合会場モード',0,
+    '<div class="m230-permission-lock">'+
+      '<div class="m230-lock-icon">🔒</div>'+
+      '<h3>コーチログイン後に操作できます</h3>'+
+      '<p>保護者閲覧モードでは、試合情報入力・スタメン選択・ライブ記録・成績保存はできません。</p>'+
+      '<div class="m230-permission-list"><span>✅ 管理者</span><span>✅ コーチ</span><span>👁 保護者は閲覧のみ</span></div>'+
+      '<div class="m230-actions center"><button type="button" class="primary" data-a="coachlogin">🔐 コーチログインへ</button></div>'+
+    '</div>'
+  );
+}
+
 function today(){var d=new Date(),p=function(n){return String(n).padStart(2,'0')};return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());}
 function now(){return Date.now();}
 function timeText(ms){var s=Math.max(0,Math.floor(Number(ms||0)/1000));return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
@@ -58,7 +79,7 @@ function load(){try{state=JSON.parse(localStorage.getItem(KEY)||'null')}catch(e)
 function save(){try{state?localStorage.setItem(KEY,JSON.stringify(state)):localStorage.removeItem(KEY)}catch(e){}}
 function elapsed(){return !state?0:Number(state.elapsedMs||0)+(state.running?Math.max(0,now()-Number(state.runStartedAt||now())):0)}
 function snap(label){var c=JSON.parse(JSON.stringify(state));delete c.history;state.history=state.history||[];state.history.push({label:label,state:c});if(state.history.length>30)state.history.shift()}
-function undo(){if(!state||!state.history||!state.history.length)return tell('取り消せる操作がありません。');var h=state.history.pop(),keep=state.history;state=h.state;state.history=keep;save();render()}
+function undo(){if(!requireCoach())return;if(!state||!state.history||!state.history.length)return tell('取り消せる操作がありません。');var h=state.history.pop(),keep=state.history;state=h.state;state.history=keep;save();render()}
 
 function ensure(){
   var main=document.querySelector('main');if(!main)return null;
@@ -86,7 +107,7 @@ function avatar(p){return p.photo?'<img src="'+esc(p.photo)+'" alt="">':'<span c
 
 function setup(){
   var count=fullRoster().length;
-  return shell('Ver.23.3.2 選手別試合履歴編集 完全版',0,
+  return shell('Ver.23.3.3 試合会場モード コーチ権限対応版',0,
     '<div class="m230-grid">'+
     '<label>試合カテゴリー<select id="m230cat"><option value="U-12">U-12</option><option value="U-11">U-11</option><option value="U-10">U-10</option><option value="U-9">U-9</option><option value="11人制">11人制</option><option value="フットサル">フットサル</option><option value="TRM">TRM</option><option value="練習試合">練習試合</option><option value="公式戦">公式戦</option><option value="custom">自由入力</option></select><input id="m230catCustom" class="hidden" placeholder="例：U-13・U-15・一般・女子・OB戦"></label>'+
     '<label>対戦相手<input id="m230opp" placeholder="例：MOSTRO"></label>'+
@@ -133,7 +154,7 @@ function getFormat(){
   if(v==='20single')return{label:'20分1本',minutes:20,periods:1};
   return{label:Number($('m230minutesCustom')?.value||15)+'分×'+Number($('m230periodsCustom')?.value||1)+'本',minutes:Number($('m230minutesCustom')?.value||15),periods:Number($('m230periodsCustom')?.value||1)};
 }
-function beginLineup(){
+function beginLineup(){if(!requireCoach())return;
   var opp=String($('m230opp')?$('m230opp').value:'').trim();
   if(!opp){tell('対戦相手を入力してください。');return}
   var all=fullRoster();
@@ -146,7 +167,7 @@ function beginLineup(){
   if(!comp){tell('大会名を入力または選択してください。');return}
   if(all.length<need){tell('登録選手が人数制より少ないです。');return}
   state={
-    version:'23.3.2',phase:'lineup',date:today(),
+    version:'23.3.3',phase:'lineup',date:today(),
     category:getMatchCategory(),opponent:opp,
     competition:comp,
     venue:String($('m230venue').value||'').trim(),
@@ -186,7 +207,7 @@ function lineup(){
     '<div class="m230-actions"><button type="button" data-a="back">戻る</button><button type="button" class="primary" data-a="confirm">開始前確認へ</button></div>'
   );
 }
-function confirmLineup(){
+function confirmLineup(){if(!requireCoach())return;
   if(selectedCount()!==Number(state.starterCount)){tell('スタメンを'+state.starterCount+'名選択してください。');return}
   Object.keys(state.stats).forEach(function(id){var p=state.stats[id];p.starter=!!state.selected[id];p.onField=p.starter});
   state.phase='confirm';save();render();
@@ -199,7 +220,7 @@ function confirmView(){
     '<div class="m230-actions"><button type="button" data-a="backlineup">戻る</button><button type="button" class="primary" data-a="kickoff">試合開始</button></div>'
   );
 }
-function kickoff(){
+function kickoff(){if(!requireCoach())return;
   state.phase='live';state.running=true;state.runStartedAt=now();
   Object.keys(state.stats).forEach(function(id){if(state.stats[id].onField)state.stats[id].onAt=0});
   state.events.unshift({time:0,text:'試合開始'});save();render();startTimer();
@@ -215,7 +236,7 @@ function live(){
 function field(){return Object.keys(state.stats).map(function(id){return state.stats[id]}).filter(function(p){return p.onField})}
 function bench(){return Object.keys(state.stats).map(function(id){return state.stats[id]}).filter(function(p){return !p.onField})}
 function choose(title,list,cb){if(!list.length)return tell('選択できる選手がいません。');var n=prompt(title+'\n'+list.map(function(p,i){return(i+1)+'. '+p.name+'（'+p.category+'）'}).join('\n'));var i=Number(n)-1;if(i>=0&&i<list.length)cb(list[i])}
-function eventAction(type){
+function eventAction(type){if(!requireCoach())return;
   if(type==='opp'){snap('相手得点');state.ga++;state.events.unshift({time:elapsed(),text:'相手得点'});save();render();return}
   if(type==='sub'){
     choose('交代で退く選手',field(),function(outP){choose('交代で入る選手',bench(),function(inP){
@@ -234,8 +255,8 @@ function eventAction(type){
     state.events.unshift({time:elapsed(),text:label+'：'+p.name});save();render()
   })
 }
-function pause(){if(state.running){state.elapsedMs=elapsed();state.running=false;state.runStartedAt=null}else{state.running=true;state.runStartedAt=now()}save();render();if(state.running)startTimer()}
-function finish(){
+function pause(){if(!requireCoach())return;if(state.running){state.elapsedMs=elapsed();state.running=false;state.runStartedAt=null}else{state.running=true;state.runStartedAt=now()}save();render();if(state.running)startTimer()}
+function finish(){if(!requireCoach())return;
   if(!confirm('試合を終了しますか？'))return;
   var t=elapsed();state.elapsedMs=t;state.running=false;state.runStartedAt=null;
   Object.keys(state.stats).forEach(function(id){var p=state.stats[id];if(p.onAt!=null)p.activeMs+=t-p.onAt;p.onAt=null;p.onField=false});
@@ -251,10 +272,10 @@ function saveView(){
     '<div class="m230-actions"><button type="button" class="primary" data-a="save">試合・選手成績を保存して終了</button><button type="button" data-a="new">次の試合</button></div>'
   );
 }
-async function saveResult(){
+async function saveResult(){if(!requireCoach())return;
   if(typeof isStaff!=='function'||!isStaff())return tell('管理者またはコーチでログインしてください。');
   try{
-    var mr={match_date:state.date,category:state.category,competition:state.competition||'',opponent:state.opponent,venue:state.venue||'',goals_for:state.gf,goals_against:state.ga,season:Number(state.date.slice(0,4)),memo:'試合会場モード Ver.23.3.2 選手別試合履歴編集 完全版',created_by:session.user.id};
+    var mr={match_date:state.date,category:state.category,competition:state.competition||'',opponent:state.opponent,venue:state.venue||'',goals_for:state.gf,goals_against:state.ga,season:Number(state.date.slice(0,4)),memo:'試合会場モード Ver.23.3.3 コーチログイン権限対応版',created_by:session.user.id};
     var x=await sb.from('matches').insert(mr).select().single();
     if(x.error)throw x.error;
     var mid=x.data.id;
@@ -268,6 +289,13 @@ async function saveResult(){
 function click(e){
   var b=e.target.closest('button');if(!b||!$(PAGE).contains(b))return;e.preventDefault();
   var a=b.getAttribute('data-a'),player=b.getAttribute('data-player'),filter=b.getAttribute('data-filter'),ev=b.getAttribute('data-event');
+  if(a==='coachlogin'){
+    var loginButton=document.getElementById('loginIn');
+    if(loginButton)loginButton.click();
+    else if(typeof showPage==='function')showPage('login');
+    return;
+  }
+  if(!requireCoach())return;
   if(a==='lineup')return beginLineup();
   if(a==='back'){state=null;save();return render()}
   if(a==='confirm')return confirmLineup();
@@ -288,6 +316,11 @@ function click(e){
 }
 function render(){
   var p=ensure();if(!p)return;
+  if(!isCoachLoggedIn()){
+    stopTimer();
+    p.innerHTML=permissionView();
+    return;
+  }
   if(!state)p.innerHTML=setup();
   else if(state.phase==='lineup')p.innerHTML=lineup();
   else if(state.phase==='confirm')p.innerHTML=confirmView();
@@ -301,5 +334,9 @@ function startTimer(){stopTimer();timer=setInterval(function(){var c=$('m230cloc
 function stopTimer(){if(timer){clearInterval(timer);timer=null}}
 function init(){load();ensure();render();window.openMatchday230=open}
 window.addEventListener('furugen-players-loaded',function(){if(!state)render()});
+window.addEventListener('furugen-auth-updated',function(e){
+  if(!e.detail||!e.detail.staff)stopTimer();
+  render();
+});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();

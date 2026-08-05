@@ -49,3 +49,26 @@
 .m230-filters{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
 .m230-filters button{border:1px solid #bae6fd;background:#f0f9ff;color:#075985;border-radius:999px;padding:8px 14px;font-weight:900;cursor:pointer}
 .m230-filters button.active{background:#0284c7;color:#fff;border-color:#0284c7}
+
+/* Ver.23.3.3 コーチログイン権限対応 */
+.m230-permission-lock{
+  max-width:680px;
+  margin:18px auto;
+  padding:28px 22px;
+  border:3px solid #f59e0b;
+  border-radius:20px;
+  background:#fffbeb;
+  color:#78350f;
+  text-align:center;
+}
+.m230-lock-icon{font-size:56px;line-height:1;margin-bottom:10px}
+.m230-permission-lock h3{margin:8px 0 12px;font-size:26px}
+.m230-permission-lock p{line-height:1.7;font-weight:700}
+.m230-permission-list{
+  display:flex;flex-wrap:wrap;justify-content:center;
+  gap:8px;margin:16px 0;
+}
+.m230-permission-list span{
+  padding:8px 12px;border-radius:999px;background:#fff;
+  border:1px solid #fbbf24;font-weight:900;
+}
