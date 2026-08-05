@@ -1,6 +1,6 @@
 function displayAccountEmail(email){const v=String(email||'').trim().toLowerCase();if(v==='furrugen.minamifc@gmail.com')return 'furugen.minamifc@gmail.com';return email||''}
 
-const V1822_CACHE_VERSION='23.3-20260805-records-unified-final';
+const V1822_CACHE_VERSION='23.3.1-20260805-player-record-editor-final';
 async function v1822EnsureFreshCache(){
   try{
     const saved=localStorage.getItem('furugen_cache_version');
@@ -892,6 +892,280 @@ ${rank||'未登録'}
 
 
 
+
+let playerRecordEditorPlayerId=null;
+let playerRecordEditorRows=[];
+
+function recordMatchInfo(record){
+  const match=(Array.isArray(matches)?matches:[]).find(function(m){
+    return String(m.id)===String(record.match_id);
+  });
+  return match||{
+    id:record.match_id,
+    match_date:'',
+    opponent:'試合情報なし',
+    competition:'',
+    venue:''
+  };
+}
+
+function playerRecordEditorTotals(rows){
+  return rows.reduce(function(total,r){
+    const played=Boolean(r.played===true||r.played===1||r.started||r.starter||Number(r.minutes||0)>0);
+    if(played)total.apps+=1;
+    total.goals+=Number(r.goals||0);
+    total.assists+=Number(r.assists||0);
+    total.minutes+=Number(r.minutes||0);
+    total.yellow+=Number(r.yellow||0);
+    total.red+=Number(r.red||0);
+    total.mvp+=r.mvp?1:0;
+    return total;
+  },{apps:0,goals:0,assists:0,minutes:0,yellow:0,red:0,mvp:0});
+}
+
+function renderPlayerRecordEditor(){
+  const body=document.getElementById('playerRecordEditorBody');
+  const summary=document.getElementById('playerRecordEditorSummary');
+  if(!body||!summary)return;
+
+  const player=(Array.isArray(players)?players:[]).find(function(p){
+    return String(p.id)===String(playerRecordEditorPlayerId);
+  });
+  const rows=playerRecordEditorRows;
+  const total=playerRecordEditorTotals(rows);
+
+  summary.innerHTML=
+    '<strong>'+(player?.name||'選手')+'</strong><br>'+
+    '出場 '+total.apps+'試合 / 得点 '+total.goals+
+    ' / アシスト '+total.assists+
+    ' / 時間 '+total.minutes+'分 / 警告 '+total.yellow+
+    ' / 退場 '+total.red;
+
+  if(!rows.length){
+    body.innerHTML='<div class="record-editor-empty">この選手の試合記録はありません。</div>';
+    return;
+  }
+
+  body.innerHTML=rows.map(function(r,index){
+    const m=recordMatchInfo(r);
+    const date=m.match_date||m.date||'日付なし';
+    const opponent=m.opponent||'対戦相手なし';
+    const competition=m.competition||m.tournament||'';
+    return `
+      <div class="record-editor-card" data-record-id="${escapeHtml(String(r.id||''))}">
+        <div class="record-editor-match">
+          <strong>${escapeHtml(date)} ${escapeHtml(opponent)}</strong>
+          <span>${escapeHtml(competition)}</span>
+        </div>
+        <div class="record-editor-grid">
+          <label>出場
+            <select data-field="played">
+              <option value="true" ${r.played?'selected':''}>出場</option>
+              <option value="false" ${!r.played?'selected':''}>出場なし</option>
+            </select>
+          </label>
+          <label>先発
+            <select data-field="started">
+              <option value="true" ${(r.started||r.starter)?'selected':''}>先発</option>
+              <option value="false" ${!(r.started||r.starter)?'selected':''}>先発なし</option>
+            </select>
+          </label>
+          <label>時間<input type="number" min="0" data-field="minutes" value="${Number(r.minutes||0)}"></label>
+          <label>得点<input type="number" min="0" data-field="goals" value="${Number(r.goals||0)}"></label>
+          <label>アシスト<input type="number" min="0" data-field="assists" value="${Number(r.assists||0)}"></label>
+          <label>警告<input type="number" min="0" data-field="yellow" value="${Number(r.yellow||0)}"></label>
+          <label>退場<input type="number" min="0" data-field="red" value="${Number(r.red||0)}"></label>
+          <label>MVP
+            <select data-field="mvp">
+              <option value="true" ${r.mvp?'selected':''}>あり</option>
+              <option value="false" ${!r.mvp?'selected':''}>なし</option>
+            </select>
+          </label>
+        </div>
+        <div class="record-editor-actions">
+          <button type="button" class="primary" onclick="saveSinglePlayerRecord('${String(r.id)}',${index})">この記録を保存</button>
+          <button type="button" class="danger" onclick="deleteSinglePlayerRecord('${String(r.id)}')">この記録を削除</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function openPlayerRecordEditor(playerId){
+  if(!isStaff()){
+    showMessage('選手別試合履歴の編集は管理者・コーチログインが必要です。');
+    return;
+  }
+  playerRecordEditorPlayerId=playerId;
+  playerRecordEditorRows=(Array.isArray(records)?records:[])
+    .filter(function(r){return String(r.player_id)===String(playerId)})
+    .sort(function(a,b){
+      const ma=recordMatchInfo(a),mb=recordMatchInfo(b);
+      return String(mb.match_date||'').localeCompare(String(ma.match_date||''));
+    });
+  document.getElementById('playerRecordEditorModal')?.classList.remove('hidden');
+  renderPlayerRecordEditor();
+}
+
+function closePlayerRecordEditor(){
+  document.getElementById('playerRecordEditorModal')?.classList.add('hidden');
+  playerRecordEditorPlayerId=null;
+  playerRecordEditorRows=[];
+}
+
+function readEditorCardValues(index){
+  const cards=document.querySelectorAll('#playerRecordEditorBody .record-editor-card');
+  const card=cards[index];
+  if(!card)throw new Error('編集対象が見つかりません。');
+  const get=function(field){
+    return card.querySelector('[data-field="'+field+'"]')?.value;
+  };
+  return {
+    played:get('played')==='true',
+    started:get('started')==='true',
+    minutes:Math.max(0,Number(get('minutes')||0)),
+    goals:Math.max(0,Number(get('goals')||0)),
+    assists:Math.max(0,Number(get('assists')||0)),
+    yellow:Math.max(0,Number(get('yellow')||0)),
+    red:Math.max(0,Number(get('red')||0)),
+    mvp:get('mvp')==='true'
+  };
+}
+
+async function saveSinglePlayerRecord(recordId,index){
+  if(!isStaff())return;
+  try{
+    const values=readEditorCardValues(index);
+    const payload={
+      played:values.played,
+      minutes:values.minutes,
+      goals:values.goals,
+      assists:values.assists,
+      yellow:values.yellow,
+      red:values.red,
+      mvp:values.mvp,
+      updated_at:new Date().toISOString()
+    };
+
+    // startedカラムが存在する環境だけ更新。失敗時はstartedなしで再実行。
+    let result=await sb.from('records').update({...payload,started:values.started}).eq('id',recordId).select();
+    if(result.error){
+      result=await sb.from('records').update(payload).eq('id',recordId).select();
+    }
+    if(result.error)throw result.error;
+
+    showMessage('試合記録を保存しました。通算成績を再計算します。','ok');
+    await loadAll();
+    playerRecordEditorRows=(Array.isArray(records)?records:[])
+      .filter(function(r){return String(r.player_id)===String(playerRecordEditorPlayerId)});
+    renderPlayerRecordEditor();
+  }catch(e){
+    console.error(e);
+    showMessage('試合記録の保存エラー：'+String(e.message||e));
+  }
+}
+
+async function deleteSinglePlayerRecord(recordId){
+  if(!isStaff())return;
+  if(!confirm('この選手のこの試合記録だけを削除します。試合そのものや他の選手の記録は削除しません。よろしいですか？'))return;
+  try{
+    const result=await sb.from('records').delete().eq('id',recordId);
+    if(result.error)throw result.error;
+    showMessage('この選手の試合記録1件を削除しました。','ok');
+    await loadAll();
+    playerRecordEditorRows=(Array.isArray(records)?records:[])
+      .filter(function(r){return String(r.player_id)===String(playerRecordEditorPlayerId)});
+    renderPlayerRecordEditor();
+  }catch(e){
+    console.error(e);
+    showMessage('試合記録の削除エラー：'+String(e.message||e));
+  }
+}
+
+function addPlayerRecordAdjustment(){
+  const player=(Array.isArray(players)?players:[]).find(function(p){
+    return String(p.id)===String(playerRecordEditorPlayerId);
+  });
+  if(!player)return;
+  document.getElementById('recordAdjustmentPlayerName').textContent=player.name||'選手';
+  document.getElementById('recordAdjustmentApps').value='0';
+  document.getElementById('recordAdjustmentGoals').value='0';
+  document.getElementById('recordAdjustmentAssists').value='0';
+  document.getElementById('recordAdjustmentMinutes').value='0';
+  document.getElementById('recordAdjustmentModal')?.classList.remove('hidden');
+}
+
+function closeRecordAdjustment(){
+  document.getElementById('recordAdjustmentModal')?.classList.add('hidden');
+}
+
+async function savePlayerRecordAdjustment(){
+  if(!isStaff())return;
+  const apps=Math.max(0,Number(document.getElementById('recordAdjustmentApps')?.value||0));
+  const goals=Math.max(0,Number(document.getElementById('recordAdjustmentGoals')?.value||0));
+  const assists=Math.max(0,Number(document.getElementById('recordAdjustmentAssists')?.value||0));
+  const minutes=Math.max(0,Number(document.getElementById('recordAdjustmentMinutes')?.value||0));
+
+  if(apps===0&&goals===0&&assists===0&&minutes===0){
+    showMessage('追加する数字を入力してください。');
+    return;
+  }
+  if(!confirm('この選手だけに補正用recordsを追加します。実行しますか？'))return;
+
+  try{
+    const date=new Date().toISOString().slice(0,10);
+    const matchPayload={
+      match_date:date,
+      competition:'選手記録補正',
+      opponent:'記録補正',
+      venue:'',
+      goals_for:0,
+      goals_against:0,
+      season:Number(date.slice(0,4)),
+      memo:'Ver.23.3.1 選手別試合履歴編集による補正',
+      created_by:session.user.id
+    };
+    const m=await sb.from('matches').insert(matchPayload).select().single();
+    if(m.error)throw m.error;
+
+    const count=Math.max(apps,1);
+    const rows=[];
+    for(let i=0;i<count;i++){
+      rows.push({
+        match_id:m.data.id,
+        player_id:playerRecordEditorPlayerId,
+        played:i<apps,
+        minutes:i===0?minutes:0,
+        goals:i===0?goals:0,
+        assists:i===0?assists:0,
+        yellow:0,
+        red:0,
+        mvp:false,
+        created_by:session.user.id
+      });
+    }
+    const r=await sb.from('records').insert(rows);
+    if(r.error)throw r.error;
+
+    closeRecordAdjustment();
+    showMessage('選手記録の補正を追加しました。','ok');
+    await loadAll();
+    playerRecordEditorRows=(Array.isArray(records)?records:[])
+      .filter(function(x){return String(x.player_id)===String(playerRecordEditorPlayerId)});
+    renderPlayerRecordEditor();
+  }catch(e){
+    console.error(e);
+    showMessage('補正記録の追加エラー：'+String(e.message||e));
+  }
+}
+
+window.openPlayerRecordEditor=openPlayerRecordEditor;
+window.closePlayerRecordEditor=closePlayerRecordEditor;
+window.saveSinglePlayerRecord=saveSinglePlayerRecord;
+window.deleteSinglePlayerRecord=deleteSinglePlayerRecord;
+window.addPlayerRecordAdjustment=addPlayerRecordAdjustment;
+window.closeRecordAdjustment=closeRecordAdjustment;
+window.savePlayerRecordAdjustment=savePlayerRecordAdjustment;
+
 function renderAll(){ video171Bind(); video17Load();
  const v16m=$('video16MatchSelect');
  if(v16m){
@@ -917,7 +1191,7 @@ function renderPlayers(){
  const list=players.filter(p=>(!status||p.status===status)&&(!q||`${p.name} ${p.grade} ${p.position} ${p.number||''}`.toLowerCase().includes(q)));
  const pages=Math.max(1,Math.ceil(list.length/PLAYER_PAGE_SIZE));if(playerPage>pages)playerPage=pages;
  const start=(playerPage-1)*PLAYER_PAGE_SIZE,shown=list.slice(start,start+PLAYER_PAGE_SIZE);
- $('playerBody').innerHTML=shown.map(p=>{const t=totals(p);return `<tr><td><button class="player-link" onclick="openPlayerDetail('${p.id}')"><div class="player-name">${p.photo_url?`<img class="avatar" src="${esc(p.photo_url)}" alt="" loading="lazy" decoding="async">`:`<span class="avatar"></span>`}<span><b>${esc(p.name)}</b>${p.number?` #${esc(p.number)}`:''}</span></div></button></td><td>${esc(p.grade)}</td><td>${esc(p.position)}</td><td>${esc(p.status)}</td><td>${t.apps}</td><td>${t.goals}</td><td>${t.assists}</td><td>${t.minutes}</td><td><button class="light" onclick="openPlayerDetail('${p.id}')">詳細</button>${isStaff()?` <button class="light" onclick="openPlayerModal('${p.id}')">編集</button> <button class="danger" onclick="deletePlayer('${p.id}')">削除</button>`:''}</td></tr>`}).join('')||'<tr><td colspan="9" class="muted">該当する選手がいません。</td></tr>';
+ $('playerBody').innerHTML=shown.map(p=>{const t=totals(p);return `<tr><td><button class="player-link" onclick="openPlayerDetail('${p.id}')"><div class="player-name">${p.photo_url?`<img class="avatar" src="${esc(p.photo_url)}" alt="" loading="lazy" decoding="async">`:`<span class="avatar"></span>`}<span><b>${esc(p.name)}</b>${p.number?` #${esc(p.number)}`:''}</span></div></button></td><td>${esc(p.grade)}</td><td>${esc(p.position)}</td><td>${esc(p.status)}</td><td>${t.apps}</td><td>${t.goals}</td><td>${t.assists}</td><td>${t.minutes}</td><td><button class="light" onclick="openPlayerDetail('${p.id}')">詳細</button><button class="small record-edit-btn" onclick="openPlayerRecordEditor('${p.id}')">履歴</button>${isStaff()?` <button class="light" onclick="openPlayerModal('${p.id}')">編集</button> <button class="danger" onclick="deletePlayer('${p.id}')">削除</button>`:''}</td></tr>`}).join('')||'<tr><td colspan="9" class="muted">該当する選手がいません。</td></tr>';
  const pager=$('playerPager');if(!pager)return;
  pager.innerHTML=list.length?`<div class="pager-info">${list.length}人中 ${start+1}〜${Math.min(start+PLAYER_PAGE_SIZE,list.length)}人を表示</div><div class="pager-buttons"><button class="light" onclick="changePlayerPage(${playerPage-1})" ${playerPage<=1?'disabled':''}>‹ 前へ</button><span>${playerPage} / ${pages}</span><button class="light" onclick="changePlayerPage(${playerPage+1})" ${playerPage>=pages?'disabled':''}>次へ ›</button></div>`:'';
 }

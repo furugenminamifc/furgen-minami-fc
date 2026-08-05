@@ -1817,3 +1817,27 @@ body{
   font-weight:900;
   text-align:center;
 }
+
+/* Ver.23.3.1 選手別試合履歴編集 */
+.record-edit-btn{background:#7c3aed!important;color:#fff!important}
+.player-record-editor-modal{max-width:1000px;max-height:92vh;overflow:auto}
+.record-editor-warning{padding:12px;border:2px solid #f59e0b;background:#fffbeb;color:#92400e;border-radius:12px;font-weight:800}
+.record-editor-summary{margin:12px 0;padding:14px;border:2px solid #60a5fa;background:#eff6ff;color:#1e3a8a;border-radius:12px;font-size:17px;line-height:1.6}
+.record-editor-toolbar{margin:12px 0}
+.player-record-editor-body{display:grid;gap:12px}
+.record-editor-card{border:2px solid #dbeafe;border-radius:14px;padding:14px;background:#fff}
+.record-editor-match{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px;color:#0f172a}
+.record-editor-match span{color:#64748b}
+.record-editor-grid{display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:10px}
+.record-editor-grid label,.record-adjustment-grid label{display:grid;gap:5px;font-weight:800;color:#334155}
+.record-editor-grid input,.record-editor-grid select,.record-adjustment-grid input{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:10px;font-size:16px}
+.record-editor-actions{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+.record-editor-actions .danger{background:#dc2626;color:#fff;border:none;border-radius:10px;padding:10px 14px;font-weight:900}
+.record-editor-empty{padding:30px;text-align:center;color:#64748b}
+.record-adjustment-modal{max-width:650px}
+.record-adjustment-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+@media(max-width:700px){
+ .record-editor-grid{grid-template-columns:repeat(2,minmax(110px,1fr))}
+ .record-adjustment-grid{grid-template-columns:1fr}
+ .player-record-editor-modal{width:96%;padding:12px}
+}
