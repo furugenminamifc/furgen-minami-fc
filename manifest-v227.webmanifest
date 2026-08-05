@@ -1,11 +1,11 @@
 {
   "id": "./?app=furugen-minami-ai-coach",
-  "name": "古堅南FC AI Coach Ver.23.2.1 過去試合一括取込完全修正版",
-  "short_name": "古堅南FC 23.2.1",
-  "description": "過去成績をSupabaseの試合・選手記録へ一括取込",
+  "name": "古堅南FC AI Coach Ver.23.2 完全修正版",
+  "short_name": "古堅南FC 23.2",
+  "description": "通算成績をrecordsのみから100%自動計算する安全版",
   "lang": "ja",
   "dir": "ltr",
-  "start_url": "./index.html?build=23.2.1-20260805-legacy-import-supabase-fix&source=pwa",
+  "start_url": "./index.html?build=23.2-20260805-records-only-safe-final&source=pwa",
   "scope": "./",
   "display": "standalone",
   "display_override": [

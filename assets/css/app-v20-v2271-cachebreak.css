@@ -1769,3 +1769,16 @@ body{
 .legacy-import-status.warn{background:#fff7ed;border-color:#fb923c;color:#9a3412}
 .legacy-import-status.error{background:#fef2f2;border-color:#ef4444;color:#991b1b}
 #legacyImportRunBtn:disabled{opacity:.45;cursor:not-allowed}
+
+/* Ver.23.2 完全修正版 records-only */
+.records-source-notice{
+  padding:12px 14px;
+  border-radius:14px;
+  background:#ecfdf5;
+  border:2px solid #34d399;
+  color:#065f46;
+  font-weight:900;
+}
+#editPastApps,#editPastGoals,#editPastAssists,#editPastYellow,#editPastRed{
+  display:none!important;
+}

@@ -54,40 +54,63 @@ async function loadAll(){
 }
 function setupRealtime(){sb.channel('furugen-live').on('postgres_changes',{event:'*',schema:'public',table:'players'},loadAll).on('postgres_changes',{event:'*',schema:'public',table:'matches'},loadAll).on('postgres_changes',{event:'*',schema:'public',table:'records'},loadAll).on('postgres_changes',{event:'*',schema:'public',table:'team_settings'},loadAll).on('postgres_changes',{event:'*',schema:'public',table:'ai_reports'},loadAll).on('postgres_changes',{event:'*',schema:'public',table:'video_notes'},loadAll).on('postgres_changes',{event:'*',schema:'public',table:'ai_plans'},loadAll).on('postgres_changes',{event:'*',schema:'public',table:'player_private'},loadAll).subscribe()}
 function playerHistoryRecords(playerId){
- const pid=String(playerId);
- const linkedMatchIds=new Set((matches||[]).map(m=>String(m.id)));
- const rows=(records||[]).filter(r=>String(r.player_id)===pid).filter(r=>{
-  if(!r.match_id)return true;
-  return linkedMatchIds.size===0||linkedMatchIds.has(String(r.match_id));
- });
- const byMatch=new Map();
- const noMatch=[];
- rows.forEach((r,index)=>{
-  if(!r.match_id){noMatch.push(r);return}
-  const key=String(r.match_id);
-  const current=byMatch.get(key);
-  if(!current){byMatch.set(key,r);return}
-  const a=Date.parse(current.updated_at||current.created_at||0)||0;
-  const b=Date.parse(r.updated_at||r.created_at||0)||0;
-  if(b>=a)byMatch.set(key,r);
- });
- return [...byMatch.values(),...noMatch];
+  const pid=String(playerId);
+  const rows=(Array.isArray(records)?records:[]).filter(function(r){
+    return String(r.player_id)===pid;
+  });
+
+  // 同じ試合・同じ選手の重複行がある場合だけ最新の1件を採用。
+  // matchesテーブルに存在しない過去recordsも除外せず、そのまま集計します。
+  const byKey=new Map();
+  rows.forEach(function(r,index){
+    const key=r.match_id
+      ? 'match:'+String(r.match_id)
+      : 'record:'+String(r.id||r.created_at||index);
+
+    const current=byKey.get(key);
+    if(!current){
+      byKey.set(key,r);
+      return;
+    }
+
+    const a=Date.parse(current.updated_at||current.created_at||0)||0;
+    const b=Date.parse(r.updated_at||r.created_at||0)||0;
+    if(b>=a)byKey.set(key,r);
+  });
+
+  return [...byKey.values()];
 }
 
 function v232TotalsFromHistory(p){
-  const out={apps:0,goals:0,assists:0,yellow:0,red:0,minutes:0,starts:0,historyCount:0};
+  const out={
+    apps:0,goals:0,assists:0,yellow:0,red:0,
+    minutes:0,starts:0,mvp:0,historyCount:0
+  };
   if(!p)return out;
-  const rows=playerHistoryRecords(p.id);
-  rows.forEach(function(r){
-    const played=Boolean(r.played||r.started||r.starter||Number(r.minutes||0)>0);
-    if(played){out.apps+=1;out.historyCount+=1}
+
+  playerHistoryRecords(p.id).forEach(function(r){
+    const played=Boolean(
+      r.played===true ||
+      r.played===1 ||
+      r.started===true ||
+      r.starter===true ||
+      Number(r.minutes||0)>0
+    );
+
+    if(played){
+      out.apps+=1;
+      out.historyCount+=1;
+    }
     if(r.started||r.starter)out.starts+=1;
+
     out.minutes+=Number(r.minutes||0);
     out.goals+=Number(r.goals||0);
     out.assists+=Number(r.assists||0);
     out.yellow+=Number(r.yellow||0);
     out.red+=Number(r.red||0);
+    out.mvp+=r.mvp?1:0;
   });
+
   return out;
 }
 
@@ -831,7 +854,7 @@ ${rank||'未登録'}
 
 
 
-function v232ImportKey(){return 'furugen_v2321_legacy_import_done'}
+function v232ImportKey(){return 'furugen_v232_records_import_done'}
 
 function v232LegacyRows(){
   return (Array.isArray(players)?players:[]).map(function(p){
@@ -854,65 +877,74 @@ function v232SetImportStatus(text,type){
   el.className='legacy-import-status '+(type||'');
 }
 
-async function v232AlreadyImported(){
-  if(!sb)return false;
-  const r=await sb.from('matches')
-    .select('id')
-    .eq('competition','過去試合一括取込')
-    .limit(1);
-  return !r.error && Array.isArray(r.data) && r.data.length>0;
-}
-
 async function openLegacyImport(){
   if(!isStaff()){
-    showMessage('過去試合一括取込は管理者・コーチログインが必要です。');
+    showMessage('管理者・コーチログインが必要です。');
     return;
   }
-  const modal=document.getElementById('legacyImportModal');
-  if(modal)modal.classList.remove('hidden');
 
+  document.getElementById('legacyImportModal')?.classList.remove('hidden');
+
+  const existingRecords=Array.isArray(records)?records.length:0;
   const rows=v232LegacyRows();
   const totalApps=rows.reduce(function(s,x){return s+x.v.apps},0);
-  const el=document.getElementById('legacyImportSummary');
-  if(el)el.textContent='対象選手 '+rows.length+'名 / 過去出場 '+totalApps+'試合';
 
-  v232SetImportStatus('取込状況を確認しています。','working');
-  try{
-    const done=await v232AlreadyImported();
-    if(done){
-      v232SetImportStatus('過去試合はすでにSupabaseへ取込済みです。','done');
-      const btn=document.getElementById('legacyImportRunBtn');
-      if(btn)btn.disabled=true;
-    }else{
-      v232SetImportStatus(rows.length?'取込可能です。下のボタンを1回だけ押してください。':'取り込める過去成績がありません。',rows.length?'ready':'warn');
-      const btn=document.getElementById('legacyImportRunBtn');
-      if(btn)btn.disabled=!rows.length;
-    }
-  }catch(e){
-    v232SetImportStatus('確認エラー：'+String(e.message||e),'error');
+  const summary=document.getElementById('legacyImportSummary');
+  if(summary){
+    summary.textContent=
+      '現在のrecords：'+existingRecords.toLocaleString()+'件 / '+
+      '旧過去成績対象：'+rows.length+'名・'+totalApps.toLocaleString()+'試合';
   }
+
+  const btn=document.getElementById('legacyImportRunBtn');
+
+  // 既存recordsを最優先で保護。1件でも存在する場合は追加取込を禁止。
+  if(existingRecords>0){
+    v232SetImportStatus(
+      '既存のrecords '+existingRecords.toLocaleString()+
+      '件を使用中です。二重取込防止のため一括取込は実行できません。',
+      'done'
+    );
+    if(btn)btn.disabled=true;
+    return;
+  }
+
+  if(localStorage.getItem(v232ImportKey())==='1'){
+    v232SetImportStatus('この端末では過去試合取込済みです。','done');
+    if(btn)btn.disabled=true;
+    return;
+  }
+
+  if(!rows.length){
+    v232SetImportStatus('取り込める旧過去成績がありません。','warn');
+    if(btn)btn.disabled=true;
+    return;
+  }
+
+  v232SetImportStatus(
+    'recordsが0件の新規環境です。旧過去成績を安全に試合履歴へ追加できます。',
+    'ready'
+  );
+  if(btn)btn.disabled=false;
 }
 
 function closeLegacyImport(){
   document.getElementById('legacyImportModal')?.classList.add('hidden');
 }
 
-function v232DateForIndex(index){
-  const d=new Date(Date.UTC(2000,0,1));
-  d.setUTCDate(d.getUTCDate()+index);
-  return d.toISOString().slice(0,10);
-}
-
-async function v232InsertInChunks(table,rows,size){
-  const result=[];
+async function v232InsertChunks(table,rows,size){
+  const saved=[];
   for(let i=0;i<rows.length;i+=size){
     const chunk=rows.slice(i,i+size);
     const q=await sb.from(table).insert(chunk).select();
     if(q.error)throw new Error(table+'保存エラー：'+q.error.message);
-    result.push(...(q.data||[]));
-    v232SetImportStatus(table+'を保存中：'+Math.min(i+size,rows.length)+' / '+rows.length,'working');
+    saved.push(...(q.data||[]));
+    v232SetImportStatus(
+      table+'保存中：'+Math.min(i+size,rows.length)+' / '+rows.length,
+      'working'
+    );
   }
-  return result;
+  return saved;
 }
 
 async function importLegacyStatsToHistory(){
@@ -920,108 +952,100 @@ async function importLegacyStatsToHistory(){
     showMessage('管理者・コーチログインが必要です。');
     return;
   }
+
   const btn=document.getElementById('legacyImportRunBtn');
   if(btn)btn.disabled=true;
 
   try{
-    if(await v232AlreadyImported()){
-      v232SetImportStatus('過去試合はすでに取込済みです。','done');
+    // 実行直前にもSupabaseのrecords件数を再確認
+    const check=await sb.from('records').select('id',{count:'exact',head:true});
+    if(check.error)throw new Error('records確認エラー：'+check.error.message);
+
+    if(Number(check.count||0)>0){
+      v232SetImportStatus(
+        '既存records '+Number(check.count).toLocaleString()+
+        '件を検出しました。安全のため取込を中止しました。',
+        'done'
+      );
       return;
     }
 
     const rows=v232LegacyRows();
     if(!rows.length){
-      v232SetImportStatus('取り込める過去成績がありません。','warn');
+      v232SetImportStatus('取り込める旧過去成績がありません。','warn');
       return;
     }
 
     const maxApps=Math.max(...rows.map(function(x){return x.v.apps}),0);
     if(maxApps<=0){
-      v232SetImportStatus('過去出場試合が0件のため取込できません。','warn');
+      v232SetImportStatus('過去出場試合が0件です。','warn');
       return;
     }
 
     if(!confirm(
-      '過去成績をSupabaseの試合履歴へ一括取込します。\n\n'+
+      'recordsが0件の新規環境にだけ、過去試合を追加します。\n\n'+
       '対象選手：'+rows.length+'名\n'+
-      '作成する過去試合：'+maxApps+'試合\n\n'+
-      'この操作は最初の1回だけ実行してください。'
+      '作成試合：'+maxApps+'試合\n\n'+
+      '既存データの削除・変更は行いません。実行しますか？'
     )){
       if(btn)btn.disabled=false;
       return;
     }
 
-    v232SetImportStatus('過去試合を作成しています。','working');
-
     const matchRows=[];
     for(let i=0;i<maxApps;i++){
+      const d=new Date(Date.UTC(2000,0,1));
+      d.setUTCDate(d.getUTCDate()+i);
       matchRows.push({
-        match_date:v232DateForIndex(i),
+        match_date:d.toISOString().slice(0,10),
         competition:'過去試合一括取込',
         opponent:'過去試合 '+String(i+1),
         venue:'',
         goals_for:0,
         goals_against:0,
         season:2000,
-        memo:'Ver.23.2.1 過去成績一括取込データ',
+        memo:'Ver.23.2 安全一括取込',
         created_by:session.user.id
       });
     }
 
-    const insertedMatches=await v232InsertInChunks('matches',matchRows,50);
-    if(insertedMatches.length!==maxApps){
-      throw new Error('作成した試合数が一致しません。');
-    }
+    v232SetImportStatus('過去試合を追加しています。','working');
+    const insertedMatches=await v232InsertChunks('matches',matchRows,50);
 
     const recordRows=[];
     rows.forEach(function(x){
-      const p=x.p,v=x.v;
-      for(let i=0;i<v.apps;i++){
-        const m=insertedMatches[i];
+      for(let i=0;i<x.v.apps;i++){
         recordRows.push({
-          match_id:m.id,
-          player_id:p.id,
+          match_id:insertedMatches[i].id,
+          player_id:x.p.id,
           played:true,
           minutes:0,
-          goals:i===0?v.goals:0,
-          assists:i===0?v.assists:0,
-          yellow:i===0?v.yellow:0,
-          red:i===0?v.red:0,
+          goals:i===0?x.v.goals:0,
+          assists:i===0?x.v.assists:0,
+          yellow:i===0?x.v.yellow:0,
+          red:i===0?x.v.red:0,
           mvp:false,
           created_by:session.user.id
         });
       }
     });
 
-    await v232InsertInChunks('records',recordRows,400);
+    await v232InsertChunks('records',recordRows,300);
 
-    v232SetImportStatus('選手の旧過去成績を0へ移行しています。','working');
-    const resetRows=rows.map(function(x){
-      return {
-        id:x.p.id,
-        past_apps:0,
-        past_goals:0,
-        past_assists:0,
-        past_yellow:0,
-        past_red:0,
-        updated_at:new Date().toISOString()
-      };
-    });
-
-    for(let i=0;i<resetRows.length;i+=100){
-      const q=await sb.from('players').upsert(resetRows.slice(i,i+100));
-      if(q.error)throw new Error('選手データ移行エラー：'+q.error.message);
-    }
-
+    // playersテーブルは一切更新しません。
     localStorage.setItem(v232ImportKey(),'1');
-    v232SetImportStatus('取込完了：'+maxApps+'試合・'+recordRows.length+'件の選手記録を保存しました。','done');
-    showMessage('過去試合の一括取込が完了しました。','ok');
+    v232SetImportStatus(
+      '取込完了：'+insertedMatches.length+'試合・'+recordRows.length+'件を追加しました。',
+      'done'
+    );
+
+    showMessage('過去試合の安全な一括取込が完了しました。','ok');
     await loadAll();
     renderAll();
   }catch(e){
     console.error(e);
     v232SetImportStatus('取込エラー：'+String(e.message||e),'error');
-    showMessage('過去試合一括取込エラー：'+String(e.message||e));
+    showMessage('取込エラー：'+String(e.message||e));
     if(btn)btn.disabled=false;
   }
 }
@@ -1348,19 +1372,13 @@ function cancelMatchEdit(clear=true){editingMatchId='';editingMatchEvaluations=[
 async function deleteMatch(id){if(!isStaff()||!confirm('この試合と選手記録を削除しますか？'))return;const rr=await sb.from('records').delete().eq('match_id',id);if(rr.error){showMessage('選手記録の削除エラー：'+rr.error.message);return}const r=await sb.from('matches').delete().eq('id',id);if(r.error)showMessage(r.error.message);else{showMessage('試合を削除しました。','ok');await loadAll()}}
 function privateForPlayer(id){return playerPrivate.find(x=>String(x.player_id)===String(id))||{}}
 function openPlayerModal(id=''){const p=players.find(x=>String(x.id)===String(id)),pv=privateForPlayer(id);$('playerModalTitle').textContent=p?'選手編集':'選手追加';$('editPlayerId').value=p?.id||'';$('editPhotoData').value=p?.photo_url||'';$('playerPhotoPreview').src=p?.photo_url||defaultAvatar();$('editPhoto').value='';$('editName').value=p?.name||'';$('editNumber').value=p?.number||'';$('editGrade').value=p?.grade||'';$('editBirthDate').value=p?.birth_date||'';$('editPosition').value=p?.position||'';$('editDominantFoot').value=p?.dominant_foot||'';$('editHeight').value=p?.height_cm||'';$('editWeight').value=p?.weight_kg||'';$('editStatus').value=p?.status||'現役';$('editStrengths').value=p?.strengths||'';$('editDevelopmentGoal').value=p?.development_goal||'';$('editFatigue').value=pv.fatigue_level||3;$('editCondition').value=pv.condition_level||3;$('editCoachNote').value=pv.coach_note||'';$('editGuardianName').value=pv.guardian_name||'';$('editGuardianPhone').value=pv.guardian_phone||'';$('editGuardianEmail').value=pv.guardian_email||'';$('editEmergencyContact').value=pv.emergency_contact||'';const autoTotal=p?totals(p):{apps:0,goals:0,assists:0,yellow:0,red:0,historyCount:0,legacyApps:0};
-$('editPastApps').value=Number(p?.past_apps||0);
-$('editPastGoals').value=Number(p?.past_goals||0);
-$('editPastAssists').value=Number(p?.past_assists||0);
-$('editPastYellow').value=Number(p?.past_yellow||0);
-$('editPastRed').value=Number(p?.past_red||0);
 ['editPastApps','editPastGoals','editPastAssists','editPastYellow','editPastRed'].forEach(k=>{const el=$(k);if(el){el.readOnly=false;el.removeAttribute('aria-readonly');el.title='アプリ導入前・未登録の過去成績を入力します';}});
 const totalMap={lifetimeApps:autoTotal.apps,lifetimeGoals:autoTotal.goals,lifetimeAssists:autoTotal.assists,lifetimeYellow:autoTotal.yellow,lifetimeRed:autoTotal.red};
-Object.keys(totalMap).forEach(k=>{const el=$(k);if(el)el.textContent=String(totalMap[k]);});
-const note=$('lifetimeBreakdown');
-if(note)note.innerHTML=
-'<strong>出場：</strong>過去 '+Number(p?.past_apps||0)+' ＋ アプリ内 '+Number(autoTotal.historyCount||0)+' ＝ <b>'+Number(autoTotal.apps||0)+'</b><br>'+
-'<strong>得点：</strong>過去 '+Number(p?.past_goals||0)+' ＋ アプリ内 '+Number(autoTotal.goals-Number(p?.past_goals||0))+' ＝ <b>'+Number(autoTotal.goals||0)+'</b><br>'+
-'<strong>アシスト：</strong>過去 '+Number(p?.past_assists||0)+' ＋ アプリ内 '+Number(autoTotal.assists-Number(p?.past_assists||0))+' ＝ <b>'+Number(autoTotal.assists||0)+'</b>';
+if($('lifetimeBreakdown'))$('lifetimeBreakdown').innerHTML=
+'<strong>集計元：</strong>recordsテーブルのみ<br>'+
+'<strong>出場：</strong><b>'+Number(autoTotal.apps||0)+'</b>試合<br>'+
+'<strong>得点：</strong><b>'+Number(autoTotal.goals||0)+'</b><br>'+
+'<strong>アシスト：</strong><b>'+Number(autoTotal.assists||0)+'</b>';
 $('playerModal').classList.remove('hidden')}
 function closePlayerModal(){$('playerModal').classList.add('hidden')}
 function playerAge(date){if(!date)return '';const b=new Date(date),n=new Date();let a=n.getFullYear()-b.getFullYear();if(n.getMonth()<b.getMonth()||(n.getMonth()===b.getMonth()&&n.getDate()<b.getDate()))a--;return a>=0?`${a}歳`:''}
@@ -1805,7 +1823,7 @@ MVP：${t.mvp}
 }
 function closePlayerDetail(){if(playerGrowthChart){playerGrowthChart.destroy();playerGrowthChart=null}$('playerDetailModal').classList.add('hidden')}
 function preparePlayerDetailAi(id){const p=players.find(x=>String(x.id)===String(id));if(!p)return;closePlayerDetail();showPage('ai');setAiMode('player',document.querySelector('[data-mode="player"]'));const t=totals(p),g=growthForPlayer(id).slice(0,5),med=medicalForPlayer(id).slice(0,3),sk=skillsForPlayer(id)[0],mev=matchEvaluationsForPlayer(id).slice(0,5);setAiPrompt(`${p.name}選手の育成評価を作成してください。\n学年：${p.grade||'未設定'}\nポジション：${p.position||'未設定'}\n強み：${p.strengths||'未入力'}\n次の目標：${p.development_goal||'未入力'}\n出場：${t.apps}試合、${t.minutes}分\n得点：${t.goals}、アシスト：${t.assists}、MVP：${t.mvp}\n最近の成長記録：${g.length?g.map(x=>`${x.record_date} 身長${x.height_cm||'-'}cm 体重${x.weight_kg||'-'}kg 疲労${x.fatigue_level} 調子${x.condition_level} ${injuryLabel(x.injury_status)} ${growthStatusLabel(x.training_status)}`).join(' / '):'未記録'}\n最近のメディカル情報：${med.length?med.map(x=>`${x.record_date} ${x.body_part||''} ${x.diagnosis||''} 復帰予定${x.return_date||'-'}`).join(' / '):'未記録'}\n最新技術評価：${sk?`ドリブル${sk.dribbling} パス${sk.passing} シュート${sk.shooting} 守備${sk.defending} スピード${sk.speed} 判断力${sk.decision_making} フィジカル${sk.physical} メンタル${sk.mental}`:'未評価'}\n最近の試合評価：${mev.length?mev.map(e=>{const m=matchById(e.match_id);return `${m?.match_date||''} ${m?.opponent||''} 総合${evaluationOverall(e)} 良かった点:${e.good_points||'-'} 改善点:${e.improvement_points||'-'}`}).join(' / '):'未評価'}\n本人に伝える良い点、伸ばしたい点、次の具体目標、前向きな声かけを小学生に伝わる言葉で作ってください。`)}
-async function savePlayer(){if(!isStaff())return;const name=$('editName').value.trim();if(!name){showMessage('名前を入力してください。');return}const id=$('editPlayerId').value||('P'+Date.now().toString(36));const existingPlayer=players.find(x=>String(x.id)===String(id));const data={id,name,photo_url:$('editPhotoData').value||null,number:$('editNumber').value.trim(),grade:$('editGrade').value.trim(),birth_date:$('editBirthDate').value||null,position:$('editPosition').value.trim(),dominant_foot:$('editDominantFoot').value,height_cm:+$('editHeight').value||null,weight_kg:+$('editWeight').value||null,status:$('editStatus').value,strengths:$('editStrengths').value.trim(),development_goal:$('editDevelopmentGoal').value.trim(),past_apps:Number($('editPastApps').value||0),past_goals:Number($('editPastGoals').value||0),past_assists:Number($('editPastAssists').value||0),past_yellow:Number($('editPastYellow').value||0),past_red:Number($('editPastRed').value||0),updated_at:new Date().toISOString()};const r=await sb.from('players').upsert(data);if(r.error){showMessage(r.error.message);return}const privateData={player_id:String(id),fatigue_level:+$('editFatigue').value||3,condition_level:+$('editCondition').value||3,coach_note:$('editCoachNote').value.trim(),guardian_name:$('editGuardianName').value.trim(),guardian_phone:$('editGuardianPhone').value.trim(),guardian_email:$('editGuardianEmail').value.trim(),emergency_contact:$('editEmergencyContact').value.trim(),updated_at:new Date().toISOString()};const pr=await sb.from('player_private').upsert(privateData);if(pr.error){showMessage('基本情報は保存しましたが、非公開情報の保存に失敗しました：'+pr.error.message);return}closePlayerModal();showMessage('過去成績を保存し、通算成績を再計算しました。','ok');await loadAll();renderAll()}
+async function savePlayer(){if(!isStaff())return;const name=$('editName').value.trim();if(!name){showMessage('名前を入力してください。');return}const id=$('editPlayerId').value||('P'+Date.now().toString(36));const existingPlayer=players.find(x=>String(x.id)===String(id));const data={id,name,photo_url:$('editPhotoData').value||null,number:$('editNumber').value.trim(),grade:$('editGrade').value.trim(),birth_date:$('editBirthDate').value||null,position:$('editPosition').value.trim(),dominant_foot:$('editDominantFoot').value,height_cm:+$('editHeight').value||null,weight_kg:+$('editWeight').value||null,status:$('editStatus').value,strengths:$('editStrengths').value.trim(),development_goal:$('editDevelopmentGoal').value.trim(),updated_at:new Date().toISOString()};const r=await sb.from('players').upsert(data);if(r.error){showMessage(r.error.message);return}const privateData={player_id:String(id),fatigue_level:+$('editFatigue').value||3,condition_level:+$('editCondition').value||3,coach_note:$('editCoachNote').value.trim(),guardian_name:$('editGuardianName').value.trim(),guardian_phone:$('editGuardianPhone').value.trim(),guardian_email:$('editGuardianEmail').value.trim(),emergency_contact:$('editEmergencyContact').value.trim(),updated_at:new Date().toISOString()};const pr=await sb.from('player_private').upsert(privateData);if(pr.error){showMessage('基本情報は保存しましたが、非公開情報の保存に失敗しました：'+pr.error.message);return}closePlayerModal();showMessage('選手情報を保存しました。通算成績はrecordsから自動再計算されます。','ok');await loadAll();renderAll()}
 async function deletePlayer(id){if(!isStaff())return;const p=players.find(x=>x.id===id);if(!p||!confirm(`「${p.name}」を削除しますか？\nこの選手の試合記録もすべて削除されます。`))return;const rr=await sb.from('records').delete().eq('player_id',id);if(rr.error){showMessage('選手記録の削除エラー：'+rr.error.message);return}const r=await sb.from('players').delete().eq('id',id);if(r.error)showMessage(r.error.message);else{showMessage('選手を削除しました。','ok');await loadAll()}}
 async function login(){const r=await sb.auth.signInWithPassword({email:$('loginEmail').value.trim(),password:$('loginPassword').value});if(r.error)showMessage('ログイン失敗：'+r.error.message);else showMessage('ログインしました。','ok')}
 async function logout(){await sb.auth.signOut();showMessage('ログアウトしました。','ok')}
