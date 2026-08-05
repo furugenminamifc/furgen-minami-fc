@@ -1,4 +1,4 @@
-/* 古堅南FC AI Coach Ver.24.0 試合会場モード 完全完成版 */
+/* 古堅南FC AI Coach Ver.24.0.1 試合会場モード 完全完成版 */
 (function(){
 'use strict';
 
@@ -107,7 +107,7 @@ function shell(title,step,body){return '<div class="m230-card"><header><div><sma
 function setup(){
   var count=fullRoster().length;
   var draft=state?'<div class="m240-draft">💾 途中記録があります。続きから再開できます。</div>':'';
-  return shell('Ver.24.0 試合会場モード 完全完成版',0,
+  return shell('Ver.24.0.1 試合会場モード 完全完成版',0,
     draft+'<div class="m230-grid">'+
     '<label>試合カテゴリー<select id="m230cat"><option>U-12</option><option>U-11</option><option>U-10</option><option>U-9</option><option>11人制</option><option>フットサル</option><option>TRM</option><option>練習試合</option><option>公式戦</option><option value="custom">自由入力</option></select><input id="m230catCustom" class="hidden" placeholder="カテゴリーを入力"></label>'+
     '<label>対戦相手<input id="m230opp" placeholder="例：MOSTRO"></label>'+
@@ -146,7 +146,7 @@ function beginLineup(){
   if(!comp)return tell('大会名を入力または選択してください。');
   if(!all.length)return tell('選手データを取得できていません。');
   if(all.length<need)return tell('登録選手が人数制より少ないです。');
-  state={version:'24.0',phase:'lineup',date:today(),category:category,opponent:opp,competition:comp,
+  state={version:'24.0.1',phase:'lineup',date:today(),category:category,opponent:opp,competition:comp,
     venue:String($('m230venue')?.value||'').trim(),starterCount:need,periodMinutes:fmt.minutes,totalPeriods:fmt.periods,
     formatLabel:fmt.label,currentPeriod:1,periodElapsedMs:0,periodRunStartedAt:null,elapsedMs:0,runStartedAt:null,
     running:false,gf:0,ga:0,selected:{},stats:{},events:[],history:[],filter:'ALL',choice:null,savedMatchId:null};

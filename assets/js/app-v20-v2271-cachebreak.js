@@ -1,6 +1,6 @@
 function displayAccountEmail(email){const v=String(email||'').trim().toLowerCase();if(v==='furrugen.minamifc@gmail.com')return 'furugen.minamifc@gmail.com';return email||''}
 
-const V1822_CACHE_VERSION='24.0-20260806-matchday-complete-final';
+const V1822_CACHE_VERSION='24.0.1-20260806-home-stats-permission-final';
 async function v1822EnsureFreshCache(){
   try{
     const saved=localStorage.getItem('furugen_cache_version');
@@ -32,7 +32,16 @@ function showPage(id){document.querySelectorAll('.page').forEach(x=>x.classList.
 function isStaff(){return !!(profile&&profile.active&&['admin','coach'].includes(profile.role))}
 function esc(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 async function init(){const c=window.FURUGEN_CONFIG;if(!c||!c.SUPABASE_URL||!c.SUPABASE_ANON_KEY){showMessage('config.jsの設定がありません。');return}sb=supabase.createClient(c.SUPABASE_URL,c.SUPABASE_ANON_KEY);const x=await sb.auth.getSession();session=x.data.session;await loadProfile();await loadAll();setupRealtime();sb.auth.onAuthStateChange(async(_,s)=>{session=s;await loadProfile();await loadAll()});if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{});} if('caches' in window){caches.keys().then(keys=>keys.forEach(k=>caches.delete(k))).catch(()=>{});} setTimeout(v182Init,200)}
-async function loadProfile(){profile=null;if(session){const r=await sb.from('profiles').select('*').eq('id',session.user.id).maybeSingle();profile=r.data}const staff=isStaff();$('mode').textContent=staff?`${displayAccountEmail(session.user.email)}（${profile.role==='admin'?'管理者':'コーチ'}）`:'保護者閲覧モード';$('loginOut').classList.toggle('hidden',!!session);$('loginIn').classList.toggle('hidden',!session);$('entryForm').classList.toggle('hidden',!staff);$('needLogin').classList.toggle('hidden',staff);$('addPlayerBtn').classList.toggle('hidden',!staff);if(session)$('loginWho').textContent=`${displayAccountEmail(session.user.email)} / 権限：${profile?.role||'未設定'}`;window.dispatchEvent(new CustomEvent('furugen-auth-updated',{detail:{staff:staff,role:profile?.role||null,email:session?.user?.email||null}}))}
+
+function updateHomeStatsPermission(){
+  const el=$('stats');
+  if(!el)return;
+  const staff=isStaff();
+  el.classList.toggle('hidden',!staff);
+  el.setAttribute('aria-hidden',staff?'false':'true');
+}
+
+async function loadProfile(){profile=null;if(session){const r=await sb.from('profiles').select('*').eq('id',session.user.id).maybeSingle();profile=r.data}const staff=isStaff();$('mode').textContent=staff?`${displayAccountEmail(session.user.email)}（${profile.role==='admin'?'管理者':'コーチ'}）`:'保護者閲覧モード';$('loginOut').classList.toggle('hidden',!!session);$('loginIn').classList.toggle('hidden',!session);$('entryForm').classList.toggle('hidden',!staff);$('needLogin').classList.toggle('hidden',staff);$('addPlayerBtn').classList.toggle('hidden',!staff);if(session)$('loginWho').textContent=`${displayAccountEmail(session.user.email)} / 権限：${profile?.role||'未設定'}`;updateHomeStatsPermission();window.dispatchEvent(new CustomEvent('furugen-auth-updated',{detail:{staff:staff,role:profile?.role||null,email:session?.user?.email||null}}))}
 
 async function fetchAllRows(table,options){
   const pageSize=1000;
@@ -1275,7 +1284,7 @@ function renderAll(){ video171Bind(); video17Load();
  }
  renderVideo16OverlayPitch();renderVideo16OverlaySummary();renderVideo16OverlayTimeline();
 renderAiCoachDashboard();renderDashboard();renderPlayers();renderMatches();renderRanking();renderRecordInputs();refreshVer6Selects();renderSavedReports();renderVideoNotes();refreshV7Selects();renderV7History()}
-function renderDashboard(){let w=0,d=0,l=0,gf=0,ga=0;matches.forEach(m=>{gf+=m.goals_for||0;ga+=m.goals_against||0;m.goals_for>m.goals_against?w++:m.goals_for<m.goals_against?l++:d++});const rate=matches.length?Math.round(w/matches.length*100):0;$('stats').innerHTML=[['選手',players.length],['試合',matches.length],['勝利',w],['引分',d],['敗戦',l],['勝率',rate+'%'],['得点',gf],['失点',ga]].map(x=>`<div class="card stat"><span>${x[0]}</span><b>${x[1]}</b></div>`).join('');$('recent').innerHTML=matches.slice(0,6).map(matchHtml).join('')||'<p class="muted">まだ試合がありません。</p>'}
+function renderDashboard(){let w=0,d=0,l=0,gf=0,ga=0;matches.forEach(m=>{gf+=m.goals_for||0;ga+=m.goals_against||0;m.goals_for>m.goals_against?w++:m.goals_for<m.goals_against?l++:d++});const rate=matches.length?Math.round(w/matches.length*100):0;$('stats').innerHTML=[['選手',players.length],['試合',matches.length],['勝利',w],['引分',d],['敗戦',l],['勝率',rate+'%'],['得点',gf],['失点',ga]].map(x=>`<div class="card stat"><span>${x[0]}</span><b>${x[1]}</b></div>`).join('');updateHomeStatsPermission();$('recent').innerHTML=matches.slice(0,6).map(matchHtml).join('')||'<p class="muted">まだ試合がありません。</p>'}
 function resultClass(m){return m.goals_for>m.goals_against?'win':m.goals_for<m.goals_against?'loss':'draw'}
 function matchHtml(m){return `<div class="match-row"><div><b>${esc(m.match_date)}</b> <span class="pill">${esc(m.competition||'通常試合')}</span><div class="muted">${esc(m.venue||'')} ${esc(m.memo||'')}</div></div><div><span class="score ${resultClass(m)}">${m.goals_for} - ${m.goals_against}</span><br>${esc(m.opponent)}</div></div>`}
 function resetPlayerPage(){playerPage=1;renderPlayers()}

@@ -1926,3 +1926,11 @@ body{
 #recordsLoadStatus{
   display:none!important;
 }
+
+/* Ver.24.0.1 ホーム集計カード 権限制御版 */
+.home-stats-staff-only.hidden{
+  display:none!important;
+}
+.home-stats-staff-only:not(.hidden){
+  display:grid;
+}
