@@ -1,11 +1,11 @@
 {
   "id": "./?app=furugen-minami-ai-coach",
-  "name": "古堅南FC AI Coach Ver.23.2 完全修正版",
-  "short_name": "古堅南FC 23.2",
-  "description": "通算成績をrecordsのみから100%自動計算する安全版",
+  "name": "古堅南FC AI Coach Ver.23.2.2 records全件取得 緊急復旧版",
+  "short_name": "古堅南FC 23.2.2",
+  "description": "Supabase recordsを1000件ずつ全件取得し通算成績を復旧",
   "lang": "ja",
   "dir": "ltr",
-  "start_url": "./index.html?build=23.2-20260805-records-only-safe-final&source=pwa",
+  "start_url": "./index.html?build=23.2.2-20260805-records-pagination-recovery&source=pwa",
   "scope": "./",
   "display": "standalone",
   "display_override": [

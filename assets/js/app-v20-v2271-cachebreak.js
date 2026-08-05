@@ -1,6 +1,6 @@
 function displayAccountEmail(email){const v=String(email||'').trim().toLowerCase();if(v==='furrugen.minamifc@gmail.com')return 'furugen.minamifc@gmail.com';return email||''}
 
-const V1822_CACHE_VERSION='22.7.1-20260804-cachebreak';
+const V1822_CACHE_VERSION='23.2.2-20260805-records-pagination-recovery';
 async function v1822EnsureFreshCache(){
   try{
     const saved=localStorage.getItem('furugen_cache_version');
@@ -12,7 +12,7 @@ async function v1822EnsureFreshCache(){
       localStorage.setItem('furugen_cache_version',V1822_CACHE_VERSION);
       if(!location.search.includes('fresh=1910')){
         const u=new URL(location.href);
-        u.searchParams.set('fresh','1910');
+        u.searchParams.set('fresh','2322');
         location.replace(u.toString());
       }
     }
@@ -33,25 +33,74 @@ function isStaff(){return !!(profile&&profile.active&&['admin','coach'].includes
 function esc(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 async function init(){const c=window.FURUGEN_CONFIG;if(!c||!c.SUPABASE_URL||!c.SUPABASE_ANON_KEY){showMessage('config.jsの設定がありません。');return}sb=supabase.createClient(c.SUPABASE_URL,c.SUPABASE_ANON_KEY);const x=await sb.auth.getSession();session=x.data.session;await loadProfile();await loadAll();setupRealtime();sb.auth.onAuthStateChange(async(_,s)=>{session=s;await loadProfile();await loadAll()});if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{});} if('caches' in window){caches.keys().then(keys=>keys.forEach(k=>caches.delete(k))).catch(()=>{});} setTimeout(v182Init,200)}
 async function loadProfile(){profile=null;if(session){const r=await sb.from('profiles').select('*').eq('id',session.user.id).maybeSingle();profile=r.data}const staff=isStaff();$('mode').textContent=staff?`${displayAccountEmail(session.user.email)}（${profile.role==='admin'?'管理者':'コーチ'}）`:'保護者閲覧モード';$('loginOut').classList.toggle('hidden',!!session);$('loginIn').classList.toggle('hidden',!session);$('entryForm').classList.toggle('hidden',!staff);$('needLogin').classList.toggle('hidden',staff);$('addPlayerBtn').classList.toggle('hidden',!staff);if(session)$('loginWho').textContent=`${displayAccountEmail(session.user.email)} / 権限：${profile?.role||'未設定'}`}
-async function loadAll(){
- const [p,m,r,t,rp,vn,v7]=await Promise.all([
-  sb.from('players').select('*').order('grade').order('name'),
-  sb.from('matches').select('*').order('match_date',{ascending:false}),
-  sb.from('records').select('*'),
-  sb.from('team_settings').select('*'),
-  sb.from('ai_reports').select('*').order('created_at',{ascending:false}).limit(100),
-  sb.from('video_notes').select('*').order('created_at',{ascending:false}).limit(100),
-  sb.from('ai_plans').select('*').order('created_at',{ascending:false}).limit(100)
- ]);
- if(p.error||m.error||r.error){showMessage('データ取得エラー：'+(p.error||m.error||r.error).message);return}
- players=p.data||[];window.__FURUGEN_PLAYERS__=players.slice();window.dispatchEvent(new CustomEvent('furugen-players-loaded',{detail:{count:players.length}}));matches=m.data||[];records=r.data||[];window.__FURUGEN_PLAYERS__=players;window.dispatchEvent(new CustomEvent('furugen-players-loaded',{detail:{count:players.length}}));
- reports=rp.error?[]:(rp.data||[]);
- videoNotes=vn.error?[]:(vn.data||[]);
- v7Plans=v7.error?JSON.parse(localStorage.getItem('furugenV7Plans')||'[]'):(v7.data||[]);
- playerPrivate=[];playerGrowthRecords=[];playerMedicalRecords=[];playerSkillEvaluations=[];
- teamSettings={};if(!t.error)(t.data||[]).forEach(x=>teamSettings[x.key]=x.value);
- applyTeamSettings();refreshFilters();renderAll()
+
+async function fetchAllRows(table,options){
+  const pageSize=1000;
+  let from=0;
+  let all=[];
+  const opts=options||{};
+  while(true){
+    let q=sb.from(table).select(opts.select||'*').range(from,from+pageSize-1);
+    if(opts.orderColumn){
+      q=q.order(opts.orderColumn,{ascending:opts.ascending!==false});
+    }
+    const res=await q;
+    if(res.error)throw res.error;
+    const rows=res.data||[];
+    all=all.concat(rows);
+    if(rows.length<pageSize)break;
+    from+=pageSize;
+  }
+  return all;
 }
+
+async function loadAll(){
+ try{
+   const [p,m,r,t,rp,vn,v7]=await Promise.all([
+     sb.from('players').select('*').order('grade').order('name'),
+     fetchAllRows('matches',{orderColumn:'match_date',ascending:false}),
+     fetchAllRows('records'),
+     sb.from('team_settings').select('*'),
+     sb.from('ai_reports').select('*').order('created_at',{ascending:false}).limit(100),
+     sb.from('video_notes').select('*').order('created_at',{ascending:false}).limit(100),
+     sb.from('ai_plans').select('*').order('created_at',{ascending:false}).limit(100)
+   ]);
+
+   if(p.error)throw p.error;
+
+   players=p.data||[];
+   matches=m||[];
+   records=r||[];
+
+   window.__FURUGEN_PLAYERS__=players.slice();
+   window.__FURUGEN_RECORDS_COUNT__=records.length;
+   window.dispatchEvent(new CustomEvent('furugen-players-loaded',{detail:{count:players.length}}));
+
+   reports=rp.error?[]:(rp.data||[]);
+   videoNotes=vn.error?[]:(vn.data||[]);
+   v7Plans=v7.error?JSON.parse(localStorage.getItem('furugenV7Plans')||'[]'):(v7.data||[]);
+   playerPrivate=[];
+   playerGrowthRecords=[];
+   playerMedicalRecords=[];
+   playerSkillEvaluations=[];
+
+   teamSettings={};
+   if(!t.error)(t.data||[]).forEach(function(x){teamSettings[x.key]=x.value});
+
+   applyTeamSettings();
+   refreshFilters();
+   renderAll();
+
+   const countEl=document.getElementById('recordsLoadStatus');
+   if(countEl){
+     countEl.textContent='records '+records.length.toLocaleString()+'件を全件読み込み済み';
+   }
+ }catch(e){
+   console.error(e);
+   showMessage('データ取得エラー：'+String(e.message||e));
+ }
+}
+
 function setupRealtime(){sb.channel('furugen-live').on('postgres_changes',{event:'*',schema:'public',table:'players'},loadAll).on('postgres_changes',{event:'*',schema:'public',table:'matches'},loadAll).on('postgres_changes',{event:'*',schema:'public',table:'records'},loadAll).on('postgres_changes',{event:'*',schema:'public',table:'team_settings'},loadAll).on('postgres_changes',{event:'*',schema:'public',table:'ai_reports'},loadAll).on('postgres_changes',{event:'*',schema:'public',table:'video_notes'},loadAll).on('postgres_changes',{event:'*',schema:'public',table:'ai_plans'},loadAll).on('postgres_changes',{event:'*',schema:'public',table:'player_private'},loadAll).subscribe()}
 function playerHistoryRecords(playerId){
   const pid=String(playerId);
@@ -59,26 +108,15 @@ function playerHistoryRecords(playerId){
     return String(r.player_id)===pid;
   });
 
-  // 同じ試合・同じ選手の重複行がある場合だけ最新の1件を採用。
-  // matchesテーブルに存在しない過去recordsも除外せず、そのまま集計します。
-  const byKey=new Map();
-  rows.forEach(function(r,index){
-    const key=r.match_id
-      ? 'match:'+String(r.match_id)
-      : 'record:'+String(r.id||r.created_at||index);
-
-    const current=byKey.get(key);
-    if(!current){
-      byKey.set(key,r);
-      return;
-    }
-
-    const a=Date.parse(current.updated_at||current.created_at||0)||0;
-    const b=Date.parse(r.updated_at||r.created_at||0)||0;
-    if(b>=a)byKey.set(key,r);
+  // recordsの各行をそのまま1記録として使用。
+  // 完全に同じrecord idが重複した場合だけ1件にします。
+  const seen=new Set();
+  return rows.filter(function(r,index){
+    const key=String(r.id||('row-'+index));
+    if(seen.has(key))return false;
+    seen.add(key);
+    return true;
   });
-
-  return [...byKey.values()];
 }
 
 function v232TotalsFromHistory(p){
