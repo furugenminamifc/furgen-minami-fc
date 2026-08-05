@@ -1756,3 +1756,16 @@ body{
 .legacy-import-summary{margin:14px 0;padding:14px;border-radius:14px;background:#eff6ff;border:2px solid #60a5fa;color:#1e3a8a;font-weight:900}
 .legacy-import-rules{padding:14px;border-radius:14px;background:#ecfdf5;border:2px solid #34d399;color:#065f46;font-weight:800}
 #editPastApps,#editPastGoals,#editPastAssists,#editPastYellow,#editPastRed,.past-stats-help{display:none!important}
+
+/* Ver.23.2.1 過去試合一括取込 完全修正 */
+.legacy-import-status{
+ margin:12px 0;padding:13px;border-radius:12px;
+ background:#f1f5f9;border:2px solid #cbd5e1;
+ font-weight:900;line-height:1.5;
+}
+.legacy-import-status.working{background:#eff6ff;border-color:#60a5fa;color:#1d4ed8}
+.legacy-import-status.ready{background:#ecfdf5;border-color:#34d399;color:#047857}
+.legacy-import-status.done{background:#dcfce7;border-color:#22c55e;color:#166534}
+.legacy-import-status.warn{background:#fff7ed;border-color:#fb923c;color:#9a3412}
+.legacy-import-status.error{background:#fef2f2;border-color:#ef4444;color:#991b1b}
+#legacyImportRunBtn:disabled{opacity:.45;cursor:not-allowed}
