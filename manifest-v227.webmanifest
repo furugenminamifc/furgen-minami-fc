@@ -1,11 +1,11 @@
 {
   "id": "./?app=furugen-minami-ai-coach",
-  "name": "古堅南FC AI Coach Ver.24.0.1 ホーム集計カード 権限制御版",
-  "short_name": "古堅南FC 24.0.1",
-  "description": "ホーム集計カードを管理者・コーチログイン中だけ表示",
+  "name": "古堅南FC AI Coach Ver.25.0 コーチダッシュボード・試合運用完成版",
+  "short_name": "古堅南FC 25.0",
+  "description": "今日の試合・進行中記録・保存状況・ランキングをまとめたコーチ専用画面",
   "lang": "ja",
   "dir": "ltr",
-  "start_url": "./index.html?build=24.0.1-20260806-home-stats-permission-final&source=pwa",
+  "start_url": "./index.html?build=25.0-20260806-coach-dashboard-match-operations-final&source=pwa",
   "scope": "./",
   "display": "standalone",
   "display_override": [

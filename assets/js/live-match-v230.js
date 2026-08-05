@@ -1,4 +1,4 @@
-/* 古堅南FC AI Coach Ver.24.0.1 試合会場モード 完全完成版 */
+/* 古堅南FC AI Coach Ver.25.0 試合会場モード 完全完成版 */
 (function(){
 'use strict';
 
@@ -107,7 +107,7 @@ function shell(title,step,body){return '<div class="m230-card"><header><div><sma
 function setup(){
   var count=fullRoster().length;
   var draft=state?'<div class="m240-draft">💾 途中記録があります。続きから再開できます。</div>':'';
-  return shell('Ver.24.0.1 試合会場モード 完全完成版',0,
+  return shell('Ver.25.0 試合会場モード 完全完成版',0,
     draft+'<div class="m230-grid">'+
     '<label>試合カテゴリー<select id="m230cat"><option>U-12</option><option>U-11</option><option>U-10</option><option>U-9</option><option>11人制</option><option>フットサル</option><option>TRM</option><option>練習試合</option><option>公式戦</option><option value="custom">自由入力</option></select><input id="m230catCustom" class="hidden" placeholder="カテゴリーを入力"></label>'+
     '<label>対戦相手<input id="m230opp" placeholder="例：MOSTRO"></label>'+

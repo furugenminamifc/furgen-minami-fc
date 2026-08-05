@@ -1,6 +1,6 @@
 function displayAccountEmail(email){const v=String(email||'').trim().toLowerCase();if(v==='furrugen.minamifc@gmail.com')return 'furugen.minamifc@gmail.com';return email||''}
 
-const V1822_CACHE_VERSION='24.0.1-20260806-home-stats-permission-final';
+const V1822_CACHE_VERSION='25.0-20260806-coach-dashboard-match-operations-final';
 async function v1822EnsureFreshCache(){
   try{
     const saved=localStorage.getItem('furugen_cache_version');
@@ -28,17 +28,21 @@ const detailCache=new Map();
 const DETAIL_CACHE_MS=5*60*1000;
 const $=id=>document.getElementById(id);
 function showMessage(text,type='warn'){const e=$('message');e.textContent=text;e.className=(type==='ok'?'notice success':'notice');e.classList.remove('hidden');setTimeout(()=>e.classList.add('hidden'),5000)}
-function showPage(id){document.querySelectorAll('.page').forEach(x=>x.classList.remove('show'));$(id).classList.add('show');if(id==='entry')renderRecordInputs();if(id==='analytics')setTimeout(renderAnalytics,0);if(id==='ai')setTimeout(testAiConnection,0);if(id==='reports')setTimeout(renderReportsPage,0);if(id==='video')setTimeout(renderVideoPage,0);if(id==='ver7')setTimeout(renderV7Page,0);if(id==='backup')setTimeout(v182RenderBackupCenter,0);if(id==='ver19')setTimeout(()=>{v19Render();v191Render();},0);if(id==='ai')setTimeout(v182RefreshAiSummary,100)}
+function showPage(id){document.querySelectorAll('.page').forEach(x=>x.classList.remove('show'));$(id).classList.add('show');if(id==='entry')renderRecordInputs();if(id==='analytics')setTimeout(renderAnalytics,0);if(id==='ai')setTimeout(testAiConnection,0);if(id==='reports')setTimeout(renderReportsPage,0);if(id==='video')setTimeout(renderVideoPage,0);if(id==='ver7')setTimeout(renderV7Page,0);if(id==='backup')setTimeout(v182RenderBackupCenter,0);if(id==='coachDashboard')setTimeout(renderCoachDashboard,0);if(id==='ver19')setTimeout(()=>{v19Render();v191Render();},0);if(id==='ai')setTimeout(v182RefreshAiSummary,100)}
 function isStaff(){return !!(profile&&profile.active&&['admin','coach'].includes(profile.role))}
 function esc(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 async function init(){const c=window.FURUGEN_CONFIG;if(!c||!c.SUPABASE_URL||!c.SUPABASE_ANON_KEY){showMessage('config.jsの設定がありません。');return}sb=supabase.createClient(c.SUPABASE_URL,c.SUPABASE_ANON_KEY);const x=await sb.auth.getSession();session=x.data.session;await loadProfile();await loadAll();setupRealtime();sb.auth.onAuthStateChange(async(_,s)=>{session=s;await loadProfile();await loadAll()});if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{});} if('caches' in window){caches.keys().then(keys=>keys.forEach(k=>caches.delete(k))).catch(()=>{});} setTimeout(v182Init,200)}
 
 function updateHomeStatsPermission(){
   const el=$('stats');
-  if(!el)return;
+  const nav=$('coachDashboardNav');
   const staff=isStaff();
-  el.classList.toggle('hidden',!staff);
-  el.setAttribute('aria-hidden',staff?'false':'true');
+  if(el){
+    el.classList.toggle('hidden',!staff);
+    el.setAttribute('aria-hidden',staff?'false':'true');
+  }
+  if(nav)nav.classList.toggle('hidden',!staff);
+  if(!staff&&$('coachDashboard')?.classList.contains('show'))showPage('home');
 }
 
 async function loadProfile(){profile=null;if(session){const r=await sb.from('profiles').select('*').eq('id',session.user.id).maybeSingle();profile=r.data}const staff=isStaff();$('mode').textContent=staff?`${displayAccountEmail(session.user.email)}（${profile.role==='admin'?'管理者':'コーチ'}）`:'保護者閲覧モード';$('loginOut').classList.toggle('hidden',!!session);$('loginIn').classList.toggle('hidden',!session);$('entryForm').classList.toggle('hidden',!staff);$('needLogin').classList.toggle('hidden',staff);$('addPlayerBtn').classList.toggle('hidden',!staff);if(session)$('loginWho').textContent=`${displayAccountEmail(session.user.email)} / 権限：${profile?.role||'未設定'}`;updateHomeStatsPermission();window.dispatchEvent(new CustomEvent('furugen-auth-updated',{detail:{staff:staff,role:profile?.role||null,email:session?.user?.email||null}}))}
@@ -1284,7 +1288,113 @@ function renderAll(){ video171Bind(); video17Load();
  }
  renderVideo16OverlayPitch();renderVideo16OverlaySummary();renderVideo16OverlayTimeline();
 renderAiCoachDashboard();renderDashboard();renderPlayers();renderMatches();renderRanking();renderRecordInputs();refreshVer6Selects();renderSavedReports();renderVideoNotes();refreshV7Selects();renderV7History()}
-function renderDashboard(){let w=0,d=0,l=0,gf=0,ga=0;matches.forEach(m=>{gf+=m.goals_for||0;ga+=m.goals_against||0;m.goals_for>m.goals_against?w++:m.goals_for<m.goals_against?l++:d++});const rate=matches.length?Math.round(w/matches.length*100):0;$('stats').innerHTML=[['選手',players.length],['試合',matches.length],['勝利',w],['引分',d],['敗戦',l],['勝率',rate+'%'],['得点',gf],['失点',ga]].map(x=>`<div class="card stat"><span>${x[0]}</span><b>${x[1]}</b></div>`).join('');updateHomeStatsPermission();$('recent').innerHTML=matches.slice(0,6).map(matchHtml).join('')||'<p class="muted">まだ試合がありません。</p>'}
+
+function v250ReadLocal(key){
+  try{return JSON.parse(localStorage.getItem(key)||'null')}catch(e){return null}
+}
+function v250TotalsByPlayer(){
+  const map={};
+  players.forEach(p=>map[String(p.id)]={player:p,apps:0,goals:0,assists:0,minutes:0});
+  records.forEach(r=>{
+    const id=String(r.player_id||'');
+    if(!map[id])return;
+    const played=!!(r.played===true||r.played===1||r.started||r.starter||Number(r.minutes||0)>0);
+    if(played)map[id].apps++;
+    map[id].goals+=Number(r.goals||0);
+    map[id].assists+=Number(r.assists||0);
+    map[id].minutes+=Number(r.minutes||0);
+  });
+  return Object.values(map);
+}
+function v250Escape(v){return escapeHtml(String(v==null?'':v))}
+function v250MatchDate(m){return String(m.match_date||m.date||'')}
+function v250Today(){
+  const d=new Date(),p=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
+}
+function v250RenderToday(){
+  const el=$('v250TodayMatch');if(!el)return;
+  const list=matches.filter(m=>v250MatchDate(m)===v250Today());
+  if(!list.length){
+    el.innerHTML=`<section class="v250-today-card empty">
+      <div><small>TODAY'S MATCH</small><h3>今日の試合はまだ登録されていません</h3><p>試合会場モードからすぐに入力できます。</p></div>
+      <button onclick="openMatchday230()">試合会場モードへ</button>
+    </section>`;
+    return;
+  }
+  el.innerHTML=list.slice(0,3).map(m=>`<section class="v250-today-card">
+    <div><small>TODAY'S MATCH</small><h3>${v250Escape(m.category||'')}　vs ${v250Escape(m.opponent||'')}</h3>
+    <p>${v250Escape(m.competition||'')} / ${v250Escape(m.venue||'会場未設定')}</p></div>
+    <strong>${Number(m.goals_for||0)} - ${Number(m.goals_against||0)}</strong>
+  </section>`).join('');
+}
+function v250RenderTeamStats(){
+  const el=$('v250TeamStats');if(!el)return;
+  let w=0,d=0,l=0,gf=0,ga=0;
+  matches.forEach(m=>{
+    const a=Number(m.goals_for||0),b=Number(m.goals_against||0);
+    gf+=a;ga+=b;a>b?w++:a<b?l++:d++;
+  });
+  const rate=matches.length?Math.round(w/matches.length*100):0;
+  el.innerHTML=[['勝利',w],['引分',d],['敗戦',l],['勝率',rate+'%'],['得点',gf],['失点',ga]]
+    .map(x=>`<div><span>${x[0]}</span><b>${x[1]}</b></div>`).join('');
+}
+function v250RenderRankings(totals){
+  const el=$('v250Rankings');if(!el)return;
+  const ranked=[...totals].sort((a,b)=>(b.goals*3+b.assists)-(a.goals*3+a.assists)).slice(0,5);
+  el.innerHTML=ranked.length?ranked.map((x,i)=>`<div class="v250-rank-row">
+    <b>${i+1}</b><span>${v250Escape(x.player.name)}</span>
+    <small>得点 ${x.goals} / アシスト ${x.assists}</small>
+  </div>`).join(''):'<p class="muted">成績データがありません。</p>';
+}
+function v250RenderLowMinutes(totals){
+  const el=$('v250LowMinutes');if(!el)return;
+  const active=totals.filter(x=>String(x.player.status||'現役')==='現役')
+    .sort((a,b)=>a.minutes-b.minutes).slice(0,6);
+  el.innerHTML=active.length?active.map(x=>`<div class="v250-player-row">
+    <span>${v250Escape(x.player.name)}</span><b>${x.minutes}分</b><small>${x.apps}試合</small>
+  </div>`).join(''):'<p class="muted">選手データがありません。</p>';
+}
+function v250RenderRecent(){
+  const el=$('v250RecentMatches');if(!el)return;
+  el.innerHTML=matches.slice(0,5).map(m=>`<div class="v250-match-row">
+    <span><b>${v250Escape(v250MatchDate(m))}</b><small>${v250Escape(m.competition||'')}</small></span>
+    <strong>${Number(m.goals_for||0)} - ${Number(m.goals_against||0)}</strong>
+    <em>${v250Escape(m.opponent||'')}</em>
+  </div>`).join('')||'<p class="muted">まだ試合がありません。</p>';
+}
+function v250RenderOperations(){
+  const active=v250ReadLocal('furugen_matchday_v240');
+  const pending=v250ReadLocal('furugen_matchday_pending_save_v240');
+  const a=$('v250ActiveMatch'),ad=$('v250ActiveDetail'),p=$('v250PendingSave');
+  if(active){
+    if(a)a.textContent='進行中';
+    if(ad)ad.textContent=`${active.category||''} vs ${active.opponent||''} / ${active.phase||''}`;
+  }else{
+    if(a)a.textContent='なし';
+    if(ad)ad.textContent='途中記録はありません';
+  }
+  if(p)p.textContent=pending?'1件':'0件';
+}
+function renderCoachDashboard(){
+  const permission=$('v250Permission'),content=$('v250DashboardContent');
+  const staff=isStaff();
+  if(permission)permission.classList.toggle('hidden',staff);
+  if(content)content.classList.toggle('hidden',!staff);
+  if(!staff)return;
+  $('v250PlayerCount').textContent=players.length+'名';
+  $('v250MatchCount').textContent=matches.length+'試合';
+  const totals=v250TotalsByPlayer();
+  v250RenderToday();
+  v250RenderOperations();
+  v250RenderTeamStats();
+  v250RenderRankings(totals);
+  v250RenderLowMinutes(totals);
+  v250RenderRecent();
+}
+window.renderCoachDashboard=renderCoachDashboard;
+
+function renderDashboard(){let w=0,d=0,l=0,gf=0,ga=0;matches.forEach(m=>{gf+=m.goals_for||0;ga+=m.goals_against||0;m.goals_for>m.goals_against?w++:m.goals_for<m.goals_against?l++:d++});const rate=matches.length?Math.round(w/matches.length*100):0;$('stats').innerHTML=[['選手',players.length],['試合',matches.length],['勝利',w],['引分',d],['敗戦',l],['勝率',rate+'%'],['得点',gf],['失点',ga]].map(x=>`<div class="card stat"><span>${x[0]}</span><b>${x[1]}</b></div>`).join('');updateHomeStatsPermission();$('recent').innerHTML=matches.slice(0,6).map(matchHtml).join('')||'<p class="muted">まだ試合がありません。</p>';if($('coachDashboard')?.classList.contains('show'))renderCoachDashboard()}
 function resultClass(m){return m.goals_for>m.goals_against?'win':m.goals_for<m.goals_against?'loss':'draw'}
 function matchHtml(m){return `<div class="match-row"><div><b>${esc(m.match_date)}</b> <span class="pill">${esc(m.competition||'通常試合')}</span><div class="muted">${esc(m.venue||'')} ${esc(m.memo||'')}</div></div><div><span class="score ${resultClass(m)}">${m.goals_for} - ${m.goals_against}</span><br>${esc(m.opponent)}</div></div>`}
 function resetPlayerPage(){playerPage=1;renderPlayers()}
