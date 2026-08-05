@@ -1795,3 +1795,25 @@ body{
   font-weight:900;
   text-align:center;
 }
+
+/* Ver.23.3 records完全統一版 */
+.legacy-import-open,
+#legacyImportModal,
+.legacy-import-modal,
+.legacy-import-warning,
+.legacy-import-summary,
+.legacy-import-status,
+.legacy-import-rules{
+  display:none!important;
+}
+.records-unified-notice{
+  margin:10px auto 8px;
+  max-width:760px;
+  padding:12px 14px;
+  border-radius:12px;
+  background:#eff6ff;
+  border:2px solid #60a5fa;
+  color:#1e3a8a;
+  font-weight:900;
+  text-align:center;
+}
