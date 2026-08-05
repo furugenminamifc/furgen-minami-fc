@@ -1733,3 +1733,18 @@ body{
 .m2313-extra input{width:90px!important;min-height:44px!important;text-align:center;font-weight:900}
 #m230compPreset,#m230count,#m230format{min-height:52px;font-size:18px;font-weight:900}
 #m230compCustom{display:block;margin-top:10px;min-height:52px;font-size:18px;font-weight:900}
+
+/* Ver.23.1.4 試合カテゴリー自由選択 */
+#m230cat{
+ min-height:52px;
+ font-size:18px;
+ font-weight:900;
+}
+#m230catCustom{
+ display:block;
+ margin-top:10px;
+ min-height:52px;
+ font-size:18px;
+ font-weight:900;
+}
+#m230catCustom.hidden{display:none!important}

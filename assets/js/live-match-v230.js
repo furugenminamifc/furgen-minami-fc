@@ -68,7 +68,7 @@ function ensure(){
     page.dataset.bound='1';
     page.addEventListener('click',click,false);
     page.addEventListener('change',function(e){
-      if(e.target&&['m230compPreset','m230count','m230format'].includes(e.target.id))syncConditionFields();
+      if(e.target&&['m230cat','m230compPreset','m230count','m230format'].includes(e.target.id))syncConditionFields();
     },false);
   }
   var nav=$('matchday230Nav');
@@ -86,9 +86,9 @@ function avatar(p){return p.photo?'<img src="'+esc(p.photo)+'" alt="">':'<span c
 
 function setup(){
   var count=fullRoster().length;
-  return shell('Ver.23.1.3 試合会場モード 完全修正版',0,
+  return shell('Ver.23.1.4 試合会場モード 完全修正版',0,
     '<div class="m230-grid">'+
-    '<label>試合カテゴリー<select id="m230cat"><option>U-12</option><option>U-11</option><option>U-10</option><option>U-9</option></select></label>'+
+    '<label>試合カテゴリー<select id="m230cat"><option value="U-12">U-12</option><option value="U-11">U-11</option><option value="U-10">U-10</option><option value="U-9">U-9</option><option value="11人制">11人制</option><option value="フットサル">フットサル</option><option value="TRM">TRM</option><option value="練習試合">練習試合</option><option value="公式戦">公式戦</option><option value="custom">自由入力</option></select><input id="m230catCustom" class="hidden" placeholder="例：U-13・U-15・一般・女子・OB戦"></label>'+
     '<label>対戦相手<input id="m230opp" placeholder="例：MOSTRO"></label>'+
     '<label>大会名<select id="m230compPreset"><option value="TML">TML</option><option value="TRM">TRM</option><option value="公式戦">公式戦</option><option value="リーグ戦">リーグ戦</option><option value="カップ戦">カップ戦</option><option value="custom">自由記入</option></select><input id="m230compCustom" class="hidden" placeholder="大会名を入力"></label>'+
     '<label>会場<input id="m230venue" placeholder="例：古堅南小学校"></label>'+
@@ -101,12 +101,20 @@ function setup(){
   );
 }
 function syncConditionFields(){
+  var cat=$('m230cat'),catc=$('m230catCustom');
+  if(cat&&catc)catc.classList.toggle('hidden',cat.value!=='custom');
   var cp=$('m230compPreset'),cc=$('m230compCustom');
   if(cp&&cc)cc.classList.toggle('hidden',cp.value!=='custom');
   var pc=$('m230count'),pw=$('m230countCustomWrap');
   if(pc&&pw)pw.classList.toggle('hidden',pc.value!=='custom');
   var fm=$('m230format'),fw=$('m230formatCustomWrap');
   if(fm&&fw)fw.classList.toggle('hidden',fm.value!=='custom');
+}
+function getMatchCategory(){
+  var cat=$('m230cat');
+  if(!cat)return 'U-12';
+  if(cat.value==='custom')return String($('m230catCustom')?.value||'').trim();
+  return cat.value;
 }
 function getCompetition(){
   var p=$('m230compPreset');
@@ -132,12 +140,14 @@ function beginLineup(){
   if(!all.length){tell('選手データをまだ取得できていません。5秒後にもう一度押してください。');return}
   var need=getStarterCount();
   var fmt=getFormat();
+  var category=getMatchCategory();
   var comp=getCompetition();
+  if(!category){tell('試合カテゴリーを入力してください。');return}
   if(!comp){tell('大会名を入力または選択してください。');return}
   if(all.length<need){tell('登録選手が人数制より少ないです。');return}
   state={
-    version:'23.1.3',phase:'lineup',date:today(),
-    category:$('m230cat').value,opponent:opp,
+    version:'23.1.4',phase:'lineup',date:today(),
+    category:getMatchCategory(),opponent:opp,
     competition:comp,
     venue:String($('m230venue').value||'').trim(),
     starterCount:need,periodMinutes:fmt.minutes,periods:fmt.periods,matchFormat:fmt.label,
