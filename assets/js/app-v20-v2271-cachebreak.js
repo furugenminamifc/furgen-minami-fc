@@ -1,6 +1,6 @@
 function displayAccountEmail(email){const v=String(email||'').trim().toLowerCase();if(v==='furrugen.minamifc@gmail.com')return 'furugen.minamifc@gmail.com';return email||''}
 
-const V1822_CACHE_VERSION='23.3.3-20260805-matchday-coach-permission-final';
+const V1822_CACHE_VERSION='24.0-20260806-matchday-complete-final';
 async function v1822EnsureFreshCache(){
   try{
     const saved=localStorage.getItem('furugen_cache_version');

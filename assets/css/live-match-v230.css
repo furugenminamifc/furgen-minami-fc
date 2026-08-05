@@ -72,3 +72,25 @@
   padding:8px 12px;border-radius:999px;background:#fff;
   border:1px solid #fbbf24;font-weight:900;
 }
+
+/* Ver.24.0 試合会場モード 完全完成版 */
+.m240-net{font-size:12px;font-weight:900;padding:5px 9px;border-radius:999px;margin-bottom:5px;text-align:center}
+.m240-net.online{background:#dcfce7;color:#166534}.m240-net.offline{background:#fee2e2;color:#991b1b}
+.m240-draft,.m240-autosave{padding:10px 13px;border-radius:12px;background:#eff6ff;border:2px solid #60a5fa;color:#1e3a8a;font-weight:900;margin-bottom:12px;text-align:center}
+.m240-mainbtn{min-height:58px!important;font-size:19px!important;padding:13px 22px!important}
+.m240-period{padding:12px;border:2px solid #38bdf8;border-radius:14px;background:#f0f9ff;margin-bottom:12px;text-align:center}
+.m240-period>strong{font-size:18px;display:block}.m240-period>span{font-size:30px;font-weight:1000;display:block}
+.m240-progress{height:10px;background:#dbeafe;border-radius:999px;overflow:hidden;margin:8px 0}
+.m240-progress i{display:block;height:100%;width:0;background:#0ea5e9;transition:width .25s}
+#m240timeWarn{display:none;color:#b91c1c}#m240timeWarn.show{display:block}
+.m230-actions .period{background:#f59e0b;color:#fff;font-weight:900}
+.m240-overlay{position:fixed;inset:0;z-index:99999;background:rgba(15,23,42,.72);display:flex;align-items:center;justify-content:center;padding:14px}
+.m240-picker{background:#fff;width:min(760px,96vw);max-height:90vh;overflow:auto;border-radius:20px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.m240-picker h3{margin:0;text-align:center;font-size:24px}.m240-picker>p{text-align:center;color:#64748b;font-weight:800}
+.m240-choicegrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.m240-choice{display:flex!important;align-items:center!important;gap:10px!important;min-height:68px!important;padding:9px!important;border:2px solid #bae6fd!important;border-radius:13px!important;background:#f0f9ff!important;text-align:left!important;color:#0c4a6e!important}
+.m240-choice img,.m240-choice .m230-avatar{width:48px;height:48px;border-radius:50%;object-fit:cover}
+.m240-choice span{display:grid}.m240-choice small{color:#64748b}.m240-choice.none{justify-content:center!important;background:#f8fafc!important}
+.m240-cancel{width:100%;margin-top:12px;min-height:50px;background:#64748b!important;color:#fff!important}
+.m240-offline-save{padding:14px;border-radius:13px;background:#fef2f2;border:2px solid #ef4444;color:#991b1b;font-weight:900;margin-bottom:12px}
+@media(max-width:640px){.m240-choicegrid{grid-template-columns:1fr}.m230-livebuttons{grid-template-columns:repeat(2,1fr)!important}.m230-livebuttons button{min-height:68px!important;font-size:17px!important}}

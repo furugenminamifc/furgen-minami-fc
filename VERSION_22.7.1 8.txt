@@ -1,0 +1,3 @@
+古堅南FC AI Coach Ver.22.7.1 キャッシュ突破版
+BUILD: 22.7.1-20260804-cachebreak
+GitHub Pagesの古い配信を切り替えるため、ファイル名とビルド番号を新規化しています。

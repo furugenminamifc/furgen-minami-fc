@@ -1,11 +1,11 @@
 {
   "id": "./?app=furugen-minami-ai-coach",
-  "name": "古堅南FC AI Coach Ver.23.3.3 試合会場モード コーチ権限対応版",
-  "short_name": "古堅南FC 23.3.3",
-  "description": "試合会場モードを管理者・コーチログイン後のみ操作可能にした版",
+  "name": "古堅南FC AI Coach Ver.24.0 試合会場モード 完全完成版",
+  "short_name": "古堅南FC 24.0",
+  "description": "ワンタップ入力・交代・出場時間・オフライン保護・自動成績反映対応",
   "lang": "ja",
   "dir": "ltr",
-  "start_url": "./index.html?build=23.3.3-20260805-matchday-coach-permission-final&source=pwa",
+  "start_url": "./index.html?build=24.0-20260806-matchday-complete-final&source=pwa",
   "scope": "./",
   "display": "standalone",
   "display_override": [
