@@ -1,11 +1,11 @@
 {
   "id": "./?app=furugen-minami-ai-coach",
-  "name": "古堅南FC AI Coach Ver.23.1.4 試合カテゴリー自由選択版",
-  "short_name": "古堅南FC 23.1.4",
-  "description": "試合カテゴリー、人数制、試合時間、大会名を独立して自由設定",
+  "name": "古堅南FC AI Coach Ver.23.2 試合履歴100%自動集計版",
+  "short_name": "古堅南FC 23.2",
+  "description": "過去試合一括取込後、通算成績を試合履歴のみから自動計算",
   "lang": "ja",
   "dir": "ltr",
-  "start_url": "./index.html?build=23.1.4-20260805-category-flex-final&source=pwa",
+  "start_url": "./index.html?build=23.2-20260805-history-only-import-final&source=pwa",
   "scope": "./",
   "display": "standalone",
   "display_override": [

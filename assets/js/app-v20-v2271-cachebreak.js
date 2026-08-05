@@ -73,28 +73,36 @@ function playerHistoryRecords(playerId){
  });
  return [...byMatch.values(),...noMatch];
 }
-function totals(p){
- const rr=playerHistoryRecords(p.id);
- const played=rr.filter(r=>r.played===true||r.played===1||String(r.played).toLowerCase()==='true');
- const legacy={
-  apps:Number(p.past_apps||0),
-  goals:Number(p.past_goals||0),
-  assists:Number(p.past_assists||0),
-  yellow:Number(p.past_yellow||0),
-  red:Number(p.past_red||0)
- };
- return{
-  apps:legacy.apps+played.length,
-  minutes:rr.reduce((a,r)=>a+Number(r.minutes||0),0),
-  goals:legacy.goals+rr.reduce((a,r)=>a+Number(r.goals||0),0),
-  assists:legacy.assists+rr.reduce((a,r)=>a+Number(r.assists||0),0),
-  yellow:legacy.yellow+rr.reduce((a,r)=>a+Number(r.yellow||0),0),
-  red:legacy.red+rr.reduce((a,r)=>a+Number(r.red||0),0),
-  mvp:rr.filter(r=>r.mvp===true||r.mvp===1||String(r.mvp).toLowerCase()==='true').length,
-  historyCount:played.length,
-  legacyApps:legacy.apps
- }
+
+function v232TotalsFromHistory(p){
+  const out={apps:0,goals:0,assists:0,yellow:0,red:0,minutes:0,starts:0,historyCount:0};
+  if(!p)return out;
+  const pid=String(p.id||p.player_id||'');
+  const seen=new Set();
+  const add=function(r,matchKey){
+    if(String(r.player_id||r.id||'')!==pid)return;
+    const key=String(matchKey||r.match_id||r.game_id||r.created_at||r.date||'')+'::'+pid;
+    if(seen.has(key))return;
+    seen.add(key);
+    const played=Boolean(r.played||r.appearance||r.started||r.starter||Number(r.minutes||r.playing_time||0)>0);
+    if(played){out.apps+=1;out.historyCount+=1}
+    if(r.started||r.starter)out.starts+=1;
+    out.minutes+=Number(r.minutes||r.playing_time||0);
+    out.goals+=Number(r.goals||r.goal||0);
+    out.assists+=Number(r.assists||r.assist||0);
+    out.yellow+=Number(r.yellow||r.yellow_cards||0);
+    out.red+=Number(r.red||r.red_cards||0);
+  };
+  (Array.isArray(state?.matches)?state.matches:[]).forEach(function(m){
+    const mk=m.id||m.match_id||m.created_at||m.date;
+    [].concat(m.player_stats||[],m.stats||[],m.players||[]).forEach(function(r){add(r,mk)});
+  });
+  (Array.isArray(state?.playerStats)?state.playerStats:[]).forEach(function(r){add(r,r.match_id||r.game_id)});
+  return out;
 }
+
+function totals(p){return v232TotalsFromHistory(p)}
+
 window.furugenPlayerHistoryRecords=playerHistoryRecords;
 window.furugenPlayerTotals=totals;
 function refreshFilters(){const seasons=[...new Set(matches.map(x=>x.season||String(x.match_date||'').slice(0,4)).filter(Boolean))].sort().reverse();$('matchSeason').innerHTML='<option value="">すべて</option>'+seasons.map(x=>`<option>${x}</option>`).join('');const grades=[...new Set(players.map(x=>x.grade).filter(Boolean))].sort();$('rankGrade').innerHTML='<option value="">すべて</option>'+grades.map(x=>`<option>${esc(x)}</option>`).join('');const as=$('analysisSeason'),ac=$('analysisCompetition');if(as){const seasons=[...new Set(matches.map(x=>x.season).filter(Boolean))].sort((a,b)=>b-a);const keep=as.value;as.innerHTML='<option value="">すべて</option>'+seasons.map(x=>`<option>${x}</option>`).join('');as.value=keep}if(ac){const comps=[...new Set(matches.map(x=>x.competition||'通常試合'))].sort((a,b)=>a.localeCompare(b,'ja'));const keep=ac.value;ac.innerHTML='<option value="">すべて</option>'+comps.map(x=>`<option>${esc(x)}</option>`).join('');ac.value=keep}}
@@ -830,6 +838,66 @@ ${rank||'未登録'}
 順位付けだけに偏らず、全選手の成長機会を重視してください。`;
  coachSendPrompt('season',prompt)
 }
+
+
+function v232ImportKey(){return 'furugen_v232_legacy_import_done'}
+function v232LegacyRows(){
+  return (Array.isArray(state?.players)?state.players:[]).map(function(p){
+    return {p:p,v:{
+      apps:Math.max(0,Number(p.past_apps||0)),
+      goals:Math.max(0,Number(p.past_goals||0)),
+      assists:Math.max(0,Number(p.past_assists||0)),
+      yellow:Math.max(0,Number(p.past_yellow||0)),
+      red:Math.max(0,Number(p.past_red||0))
+    }};
+  }).filter(function(x){return x.v.apps||x.v.goals||x.v.assists||x.v.yellow||x.v.red});
+}
+function openLegacyImport(){
+  const rows=v232LegacyRows();
+  const el=document.getElementById('legacyImportSummary');
+  if(el)el.textContent='対象選手 '+rows.length+'名 / 過去出場 '+rows.reduce((s,x)=>s+x.v.apps,0)+'件';
+  document.getElementById('legacyImportModal')?.classList.remove('hidden');
+}
+function closeLegacyImport(){document.getElementById('legacyImportModal')?.classList.add('hidden')}
+async function importLegacyStatsToHistory(){
+  if(localStorage.getItem(v232ImportKey())==='1'){showMessage('過去試合の一括取込は完了済みです。','ok');return}
+  const rows=v232LegacyRows();
+  if(!rows.length){showMessage('取り込める過去成績がありません。','ok');return}
+  if(!confirm('過去成績を試合履歴へ一括取込します。実行しますか？'))return;
+  const stamp=new Date().toISOString();
+  if(!Array.isArray(state.matches))state.matches=[];
+  rows.forEach(function(x){
+    const p=x.p,v=x.v;
+    for(let i=0;i<v.apps;i++){
+      state.matches.push({
+        id:'legacy-'+String(p.id)+'-'+i,
+        match_id:'legacy-'+String(p.id)+'-'+i,
+        date:'過去試合',
+        opponent:'過去試合',
+        competition:'過去試合一括取込',
+        category:p.category||'過去分',
+        status:'completed',
+        imported:true,
+        imported_at:stamp,
+        player_stats:[{
+          player_id:p.id,played:true,starter:false,minutes:0,
+          goals:i===0?v.goals:0,assists:i===0?v.assists:0,
+          yellow:i===0?v.yellow:0,red:i===0?v.red:0
+        }]
+      });
+    }
+    p.past_apps=0;p.past_goals=0;p.past_assists=0;p.past_yellow=0;p.past_red=0;
+  });
+  try{if(typeof saveState==='function')await saveState()}catch(e){}
+  localStorage.setItem(v232ImportKey(),'1');
+  closeLegacyImport();
+  showMessage('過去試合を試合履歴へ一括取込しました。','ok');
+  if(typeof loadAll==='function')await loadAll();
+  if(typeof renderAll==='function')renderAll();
+}
+window.openLegacyImport=openLegacyImport;
+window.closeLegacyImport=closeLegacyImport;
+window.importLegacyStatsToHistory=importLegacyStatsToHistory;
 
 function renderAll(){ video171Bind(); video17Load();
  const v16m=$('video16MatchSelect');

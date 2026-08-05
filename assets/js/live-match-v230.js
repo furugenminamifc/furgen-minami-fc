@@ -86,7 +86,7 @@ function avatar(p){return p.photo?'<img src="'+esc(p.photo)+'" alt="">':'<span c
 
 function setup(){
   var count=fullRoster().length;
-  return shell('Ver.23.1.4 試合会場モード 完全修正版',0,
+  return shell('Ver.23.2 試合会場モード 完全修正版',0,
     '<div class="m230-grid">'+
     '<label>試合カテゴリー<select id="m230cat"><option value="U-12">U-12</option><option value="U-11">U-11</option><option value="U-10">U-10</option><option value="U-9">U-9</option><option value="11人制">11人制</option><option value="フットサル">フットサル</option><option value="TRM">TRM</option><option value="練習試合">練習試合</option><option value="公式戦">公式戦</option><option value="custom">自由入力</option></select><input id="m230catCustom" class="hidden" placeholder="例：U-13・U-15・一般・女子・OB戦"></label>'+
     '<label>対戦相手<input id="m230opp" placeholder="例：MOSTRO"></label>'+
@@ -146,7 +146,7 @@ function beginLineup(){
   if(!comp){tell('大会名を入力または選択してください。');return}
   if(all.length<need){tell('登録選手が人数制より少ないです。');return}
   state={
-    version:'23.1.4',phase:'lineup',date:today(),
+    version:'23.2',phase:'lineup',date:today(),
     category:getMatchCategory(),opponent:opp,
     competition:comp,
     venue:String($('m230venue').value||'').trim(),

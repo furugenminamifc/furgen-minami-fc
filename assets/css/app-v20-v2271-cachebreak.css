@@ -1748,3 +1748,11 @@ body{
  font-weight:900;
 }
 #m230catCustom.hidden{display:none!important}
+
+/* Ver.23.2 試合履歴100%自動集計 */
+.legacy-import-open{display:block;margin:12px auto;padding:12px 18px;border:0;border-radius:14px;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;font-weight:900}
+.legacy-import-modal{max-width:720px}
+.legacy-import-warning{padding:16px;border-radius:14px;background:#fff7ed;border:2px solid #fb923c;color:#9a3412;line-height:1.6}
+.legacy-import-summary{margin:14px 0;padding:14px;border-radius:14px;background:#eff6ff;border:2px solid #60a5fa;color:#1e3a8a;font-weight:900}
+.legacy-import-rules{padding:14px;border-radius:14px;background:#ecfdf5;border:2px solid #34d399;color:#065f46;font-weight:800}
+#editPastApps,#editPastGoals,#editPastAssists,#editPastYellow,#editPastRed,.past-stats-help{display:none!important}
